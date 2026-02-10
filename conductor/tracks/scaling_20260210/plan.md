@@ -19,14 +19,14 @@ This plan outlines the steps to implement a responsive, information-dense layout
     - [x] Update the mouse-move logic to calculate and display the *relative date* for every city as you scrub across midnight.
 - [x] Task: Conductor - User Manual Verification 'Dynamic Absolute Dates' (Protocol in workflow.md) (aa18582)
 
-## Phase 3: Utility - Duration & Outlook Integration
-- [~] Task: Build Meeting Duration Logic
-    - [ ] Add a duration selector UI (30m, 1h, 2h).
-    - [ ] Update the `suggestMeetings` algorithm to respect the selected duration.
-- [ ] Task: Implement "Send to Outlook" Action
-    - [ ] Create a utility to generate Outlook calendar deep-links from suggested slots.
-    - [ ] Add the "Copy Summary" clipboard action for Slack integration.
-- [ ] Task: Conductor - User Manual Verification 'Duration & Outlook Integration' (Protocol in workflow.md)
+## Phase 3: Utility - Duration & Outlook Integration [checkpoint: 62ba9fe]
+- [x] Task: Build Meeting Duration Logic (eb96733)
+    - [x] Add a duration selector UI (30m, 1h, 2h).
+    - [x] Update the `suggestMeetings` algorithm to respect the selected duration.
+- [x] Task: Implement "Send to Outlook" Action (eb96733)
+    - [x] Create a utility to generate Outlook calendar deep-links from suggested slots.
+    - [x] Add the "Copy Summary" clipboard action for Slack integration.
+- [x] Task: Conductor - User Manual Verification 'Duration & Outlook Integration' (Protocol in workflow.md) (62ba9fe)
 
 ## Phase 4: Polish - Feature Integration & Mobile
 - [ ] Task: Re-integrate DST & Future View
