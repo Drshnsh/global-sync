@@ -19,9 +19,9 @@ This plan outlines the steps to implement DST detection and visualization in Glo
     - [x] Show the exact date and offset change when hovering over the DST badge.
 - [x] Task: Conductor - User Manual Verification 'UI Implementation (Warnings & Badges)' (Protocol in workflow.md) (dbc09ab)
 
-## Phase 3: Future View & Impact Analysis
-- [x] Task: Implement "Preview Next Week" Toggle (38f7a2c)
+## Phase 3: Future View & Impact Analysis [checkpoint: 871aff3]
+- [x] Task: Implement "Preview Next Week" Toggle (9537a4f)
     - [x] Add a global toggle to the header to shift the entire dashboard context +7 days.
-- [x] Task: Dynamic Recalculation for Future State (38f7a2c)
+- [x] Task: Dynamic Recalculation for Future State (9537a4f)
     - [x] Ensure all business hour bars and the Common Time Overlay update to reflect future offsets when the toggle is active.
-- [ ] Task: Conductor - User Manual Verification 'Future View & Impact Analysis' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Future View & Impact Analysis' (Protocol in workflow.md) (871aff3)
