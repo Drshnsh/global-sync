@@ -147,6 +147,36 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            :root {
+                --left-col-width: 100%;
+            }
+            .city-row {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem !important;
+            }
+            .city-row > div:first-child {
+                width: 100% !important;
+                position: relative !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-bottom: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+                padding-bottom: 0.5rem;
+            }
+            .group\/grid {
+                height: 6rem !important;
+            }
+            header {
+                gap: 1.5rem !important;
+            }
+            #suggestionsPanel {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden">

@@ -29,7 +29,7 @@ This plan outlines the steps to implement a responsive, information-dense layout
 - [x] Task: Conductor - User Manual Verification 'Duration & Outlook Integration' (Protocol in workflow.md) (62ba9fe)
 
 ## Phase 4: Polish - Feature Integration & Mobile
-- [ ] Task: Re-integrate DST & Future View
+- [~] Task: Re-integrate DST & Future View
     - [ ] Ensure Pulsing Badges and Future Mode are properly positioned in the new sticky layout.
 - [ ] Task: Mobile Vertical Stack Optimization
     - [ ] Implement media queries to transition from horizontal grid to a simplified vertical stack on narrow viewports.
