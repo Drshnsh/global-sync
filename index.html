@@ -266,6 +266,12 @@
             return { imminent: false, currentOffset };
         }
 
+        function formatDate(date) {
+            const day = date.getDate();
+            const month = date.toLocaleString('en-US', { month: 'short' });
+            return `${day} ${month}`;
+        }
+
         let selectedCities = JSON.parse(localStorage.getItem('globalSync_v2')) || [
             { name: 'Mumbai', timezone: 'Asia/Kolkata', start: 9, end: 18, isHome: true },
             { name: 'London', timezone: 'Europe/London', start: 9, end: 18, isHome: false },
@@ -390,15 +396,30 @@
         function updateScrubberLabels(percent) {
             const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
             const utcHours = (percent / 100) * 24;
+            
             selectedCities.forEach((city, index) => {
                 const offset = getTimezoneOffset(city.timezone, baseDate);
+                const localTotalMinutes = (utcHours + offset) * 60;
+                
+                // Calculate local date at the scrubber position
+                const localDateTime = new Date(baseDate.getTime());
+                // Align to UTC midnight of baseDate then add UTC hours and local offset
+                localDateTime.setUTCHours(0, 0, 0, 0);
+                localDateTime.setTime(localDateTime.getTime() + (utcHours + offset) * 36e5);
+                
                 const label = document.getElementById(`scrubberLabel-${index}`);
+                const dateLabel = document.getElementById(`dateLabel-${index}`);
+                
                 if (label) {
-                    label.innerText = formatTime((utcHours + offset) * 60);
+                    label.innerText = formatTime(localTotalMinutes);
                     label.style.left = `calc(${percent}%)`;
                     if (percent > 85) label.style.transform = 'translateX(-100%)';
                     else if (percent < 15) label.style.transform = 'translateX(0%)';
                     else label.style.transform = 'translateX(-50%)';
+                }
+                
+                if (dateLabel) {
+                    dateLabel.innerText = formatDate(localDateTime);
                 }
             });
         }
@@ -456,6 +477,7 @@
                         <div class="flex items-center gap-3 mb-6">
                             <span class="text-[10px] font-bold font-mono text-slate-500 bg-white/5 px-2 py-1 rounded uppercase tracking-tighter">UTC${offset >= 0 ? '+' : ''}${offset}</span>
                             <span class="text-xs font-black text-blue-400 uppercase tracking-widest">${localTimeStr}</span>
+                            <span id="dateLabel-${index}" class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">${formatDate(new Date(baseDate.toLocaleString('en-US', { timeZone: city.timezone })))}</span>
                         </div>
                         <div class="flex items-center gap-3">
                             <select onchange="updateBusinessHours(${index}, 'start', this.value)" class="bg-slate-800/40 text-[10px] text-emerald-400 font-black border border-emerald-500/10 rounded px-2.5 py-1.5 outline-none cursor-pointer hover:border-emerald-500/30 transition-colors">

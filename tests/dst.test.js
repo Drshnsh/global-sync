@@ -23,3 +23,11 @@ describe('isDSTImminent', () => {
         expect(result.daysUntil).toBe(1);
     });
 });
+
+describe('Date Utilities', () => {
+    const { formatDate } = require('../src/utils/dst');
+    test('it should format absolute dates correctly', () => {
+        const testDate = new Date('2026-02-10T12:00:00Z');
+        expect(formatDate(testDate)).toBe('10 Feb');
+    });
+});

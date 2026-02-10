@@ -29,4 +29,10 @@ function isDSTImminent(timezone, daysLimit = 7, baseDate = new Date()) {
     return { imminent: false, currentOffset };
 }
 
-module.exports = { isDSTImminent, getTimezoneOffset };
+function formatDate(date) {
+    const day = date.getDate();
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    return `${day} ${month}`;
+}
+
+module.exports = { isDSTImminent, getTimezoneOffset, formatDate };

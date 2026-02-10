@@ -12,7 +12,7 @@ This plan outlines the steps to implement a responsive, information-dense layout
 - [x] Task: Conductor - User Manual Verification 'Fluid Adaptive Layout' (Protocol in workflow.md) (5b88667)
 
 ## Phase 2: Logic - Dynamic Absolute Dates
-- [ ] Task: Implement Absolute Date Utility
+- [~] Task: Implement Absolute Date Utility
     - [ ] Write tests for a date-formatting utility that handles day-wrapping logic.
     - [ ] Integrate this utility into the `render` function to display labels like "11 Feb".
 - [ ] Task: Synchronize Dates with Scrubber
