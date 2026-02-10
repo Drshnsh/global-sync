@@ -28,9 +28,9 @@ This plan outlines the steps to implement a responsive, information-dense layout
     - [x] Add the "Copy Summary" clipboard action for Slack integration.
 - [x] Task: Conductor - User Manual Verification 'Duration & Outlook Integration' (Protocol in workflow.md) (62ba9fe)
 
-## Phase 4: Polish - Feature Integration & Mobile
-- [~] Task: Re-integrate DST & Future View
-    - [ ] Ensure Pulsing Badges and Future Mode are properly positioned in the new sticky layout.
-- [ ] Task: Mobile Vertical Stack Optimization
-    - [ ] Implement media queries to transition from horizontal grid to a simplified vertical stack on narrow viewports.
-- [ ] Task: Conductor - User Manual Verification 'Polish & Mobile' (Protocol in workflow.md)
+## Phase 4: Polish - Feature Integration & Mobile [checkpoint: 9e460ae]
+- [x] Task: Re-integrate DST & Future View (a6c54e6)
+    - [x] Ensure Pulsing Badges and Future Mode are properly positioned in the new sticky layout.
+- [x] Task: Mobile Vertical Stack Optimization (a6c54e6)
+    - [x] Implement media queries to transition from horizontal grid to a simplified vertical stack on narrow viewports.
+- [x] Task: Conductor - User Manual Verification 'Polish & Mobile' (Protocol in workflow.md) (9e460ae)
