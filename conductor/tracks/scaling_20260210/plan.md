@@ -2,14 +2,14 @@
 
 This plan outlines the steps to implement a responsive, information-dense layout with sticky navigation and actionable scheduling tools.
 
-## Phase 1: Foundation - Fluid Adaptive Layout
-- [x] Task: Re-engineer CSS for Viewport-Based Height (3a3468e)
+## Phase 1: Foundation - Fluid Adaptive Layout [checkpoint: 5b88667]
+- [x] Task: Re-engineer CSS for Viewport-Based Height (8b84549)
     - [x] Update `tailwind.config` with custom viewport utility classes.
     - [x] Implement a `flex flex-col h-screen` wrapper to eliminate page-level scrolling.
-- [~] Task: Implement Sticky Navigation Grid
-    - [ ] Refactor the city list to use `sticky left-0` for the location column.
-    - [ ] Ensure horizontal scrolling is contained within the timeline area only.
-- [ ] Task: Conductor - User Manual Verification 'Fluid Adaptive Layout' (Protocol in workflow.md)
+- [x] Task: Implement Sticky Navigation Grid (8b84549)
+    - [x] Refactor the city list to use `sticky left-0` for the location column.
+    - [x] Ensure horizontal scrolling is contained within the timeline area only.
+- [x] Task: Conductor - User Manual Verification 'Fluid Adaptive Layout' (Protocol in workflow.md) (5b88667)
 
 ## Phase 2: Logic - Dynamic Absolute Dates
 - [ ] Task: Implement Absolute Date Utility
