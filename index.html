@@ -161,6 +161,10 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button id="futureToggle" onclick="toggleFuture()" class="glass px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 border-white/5 text-slate-500 hover:text-blue-400">
+                    <div id="futureStatusDot" class="w-2 h-2 rounded-full bg-slate-700 transition-all"></div>
+                    Preview Next Week
+                </button>
                 <button onclick="suggestMeetings()" class="glass px-8 py-4 text-sm font-extrabold text-emerald-400 bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                     Analyze Best Slots
@@ -273,6 +277,27 @@
         const scrubber = document.getElementById('scrubber');
         const suggestionsPanel = document.getElementById('suggestionsPanel');
 
+        let isFutureMode = false;
+
+        function toggleFuture() {
+            isFutureMode = !isFutureMode;
+            const btn = document.getElementById('futureToggle');
+            const dot = document.getElementById('futureStatusDot');
+            
+            if (isFutureMode) {
+                btn.classList.add('text-blue-400', 'border-blue-500/20', 'bg-blue-500/5');
+                dot.classList.add('bg-blue-400', 'shadow-[0_0_8px_rgba(59,130,246,0.8)]');
+                btn.innerText = 'Viewing Next Week';
+                btn.prepend(dot);
+            } else {
+                btn.classList.remove('text-blue-400', 'border-blue-500/20', 'bg-blue-500/5');
+                dot.classList.remove('bg-blue-400', 'shadow-[0_0_8px_rgba(59,130,246,0.8)]');
+                btn.innerText = 'Preview Next Week';
+                btn.prepend(dot);
+            }
+            render();
+        }
+
         const LEFT_COL_WIDTH_REM = 18; // Must match --left-col-width
         const GRID_PADDING_REM = 1.5;
 
@@ -305,11 +330,12 @@
         function suggestMeetings() {
             if (selectedCities.length === 0) return;
             
+            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
             let commonStartUTC = -Infinity;
             let commonEndUTC = Infinity;
 
             selectedCities.forEach(city => {
-                const offset = getTimezoneOffset(city.timezone);
+                const offset = getTimezoneOffset(city.timezone, baseDate);
                 commonStartUTC = Math.max(commonStartUTC, city.start - offset);
                 commonEndUTC = Math.min(commonEndUTC, city.end - offset);
             });
@@ -326,7 +352,7 @@
                     card.className = `suggestion-card p-6 rounded-2xl cursor-pointer group ${cardClass}`;
                     
                     let timeBreakdown = selectedCities.map(city => {
-                        const offset = getTimezoneOffset(city.timezone);
+                        const offset = getTimezoneOffset(city.timezone, baseDate);
                         return `<div class="flex justify-between text-[10px] font-bold border-b border-white/5 py-1 last:border-0">
                             <span class="text-slate-400">${city.name}</span>
                             <span class="text-blue-400">${formatTime((startUTC + offset) * 60)}</span>
@@ -350,15 +376,13 @@
                 renderSuggestions(commonStartUTC, 'Universal');
             } else {
                 const home = selectedCities.find(c => c.isHome) || selectedCities[0];
-                const offset = getTimezoneOffset(home.timezone);
+                const offset = getTimezoneOffset(home.timezone, baseDate);
                 renderSuggestions(home.start - offset, 'Home Base', 'border-amber-500/20');
             }
             suggestionsPanel.classList.remove('hidden');
         }
 
         function moveScrubber(percent) {
-            const xPos = `calc(${percent}% + var(--left-col-width) + var(--left-col-width-rem) === undefined ? 18rem : var(--left-col-width))`; 
-            // Better to use static calc since CSS vars might be tricky in JS injection
             scrubber.style.left = `calc(${percent}% + 18rem + 1.5rem)`;
             updateScrubberLabels(percent);
             scrubber.classList.remove('hidden');
@@ -366,9 +390,10 @@
         }
 
         function updateScrubberLabels(percent) {
+            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
             const utcHours = (percent / 100) * 24;
             selectedCities.forEach((city, index) => {
-                const offset = getTimezoneOffset(city.timezone);
+                const offset = getTimezoneOffset(city.timezone, baseDate);
                 const label = document.getElementById(`scrubberLabel-${index}`);
                 if (label) {
                     label.innerText = formatTime((utcHours + offset) * 60);
@@ -385,16 +410,18 @@
             citiesList.querySelectorAll('.city-row').forEach(row => row.remove());
             saveState();
 
+            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
+
             let commonStartUTC = -Infinity;
             let commonEndUTC = Infinity;
 
             selectedCities.forEach(city => {
-                const offset = getTimezoneOffset(city.timezone);
+                const offset = getTimezoneOffset(city.timezone, baseDate);
                 commonStartUTC = Math.max(commonStartUTC, city.start - offset);
                 commonEndUTC = Math.min(commonEndUTC, city.end - offset);
                 
                 // Detect DST Change
-                city.dstInfo = isDSTImminent(city.timezone);
+                city.dstInfo = isDSTImminent(city.timezone, 7, baseDate);
             });
 
             const hasCommon = commonStartUTC < commonEndUTC;
@@ -405,15 +432,14 @@
                 const row = document.createElement('div');
                 row.className = `city-row flex items-center group py-8 px-6 rounded-2xl transition-all duration-500 relative ${city.isHome ? 'home-city-row' : ''}`;
                 
-                const now = new Date();
-                const localTimeStr = now.toLocaleTimeString('en-US', { 
+                const localTimeStr = baseDate.toLocaleTimeString('en-US', { 
                     timeZone: city.timezone, 
                     hour: '2-digit', minute: '2-digit', hour12: true 
                 });
                 
-                const offset = getTimezoneOffset(city.timezone);
-                const utcNow = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-                const currentUtcPos = (utcNow.getHours() * 60 + utcNow.getMinutes()) / 1440 * 100;
+                const offset = getTimezoneOffset(city.timezone, baseDate);
+                const utcDate = new Date(baseDate.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const currentUtcPos = (utcDate.getHours() * 60 + utcDate.getMinutes()) / 1440 * 100;
                 
                 let bStart = (city.start - offset + 24) % 24;
                 let bEnd = (city.end - offset + 24) % 24;

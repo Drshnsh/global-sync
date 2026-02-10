@@ -20,8 +20,8 @@ This plan outlines the steps to implement DST detection and visualization in Glo
 - [x] Task: Conductor - User Manual Verification 'UI Implementation (Warnings & Badges)' (Protocol in workflow.md) (dbc09ab)
 
 ## Phase 3: Future View & Impact Analysis
-- [ ] Task: Implement "Preview Next Week" Toggle
-    - [ ] Add a global toggle to the header to shift the entire dashboard context +7 days.
-- [ ] Task: Dynamic Recalculation for Future State
-    - [ ] Ensure all business hour bars and the Common Time Overlay update to reflect future offsets when the toggle is active.
+- [x] Task: Implement "Preview Next Week" Toggle (38f7a2c)
+    - [x] Add a global toggle to the header to shift the entire dashboard context +7 days.
+- [x] Task: Dynamic Recalculation for Future State (38f7a2c)
+    - [x] Ensure all business hour bars and the Common Time Overlay update to reflect future offsets when the toggle is active.
 - [ ] Task: Conductor - User Manual Verification 'Future View & Impact Analysis' (Protocol in workflow.md)
