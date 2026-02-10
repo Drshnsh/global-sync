@@ -11,13 +11,13 @@ This plan outlines the steps to implement a responsive, information-dense layout
     - [x] Ensure horizontal scrolling is contained within the timeline area only.
 - [x] Task: Conductor - User Manual Verification 'Fluid Adaptive Layout' (Protocol in workflow.md) (5b88667)
 
-## Phase 2: Logic - Dynamic Absolute Dates
-- [~] Task: Implement Absolute Date Utility
-    - [ ] Write tests for a date-formatting utility that handles day-wrapping logic.
-    - [ ] Integrate this utility into the `render` function to display labels like "11 Feb".
-- [ ] Task: Synchronize Dates with Scrubber
-    - [ ] Update the mouse-move logic to calculate and display the *relative date* for every city as you scrub across midnight.
-- [ ] Task: Conductor - User Manual Verification 'Dynamic Absolute Dates' (Protocol in workflow.md)
+## Phase 2: Logic - Dynamic Absolute Dates [checkpoint: aa18582]
+- [x] Task: Implement Absolute Date Utility (eb85499)
+    - [x] Write tests for a date-formatting utility that handles day-wrapping logic.
+    - [x] Integrate this utility into the `render` function to display labels like "11 Feb".
+- [x] Task: Synchronize Dates with Scrubber (eb85499)
+    - [x] Update the mouse-move logic to calculate and display the *relative date* for every city as you scrub across midnight.
+- [x] Task: Conductor - User Manual Verification 'Dynamic Absolute Dates' (Protocol in workflow.md) (aa18582)
 
 ## Phase 3: Utility - Duration & Outlook Integration
 - [ ] Task: Build Meeting Duration Logic
