@@ -3,7 +3,7 @@
 This plan outlines the steps to implement DST detection and visualization in Global Sync.
 
 ## Phase 1: Core DST Detection Logic
-- [ ] Task: Research and Implement `isDSTImminent` Utility
+- [x] Task: Research and Implement `isDSTImminent` Utility (3e5317c)
     - [ ] Create a JS utility function to check if a timezone has an offset change in the next 7 days.
     - [ ] Write unit tests for the detection logic using known DST transition dates.
 - [ ] Task: Integrate Detection into `render` Function
