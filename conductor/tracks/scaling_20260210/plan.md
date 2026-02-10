@@ -20,7 +20,7 @@ This plan outlines the steps to implement a responsive, information-dense layout
 - [x] Task: Conductor - User Manual Verification 'Dynamic Absolute Dates' (Protocol in workflow.md) (aa18582)
 
 ## Phase 3: Utility - Duration & Outlook Integration
-- [ ] Task: Build Meeting Duration Logic
+- [~] Task: Build Meeting Duration Logic
     - [ ] Add a duration selector UI (30m, 1h, 2h).
     - [ ] Update the `suggestMeetings` algorithm to respect the selected duration.
 - [ ] Task: Implement "Send to Outlook" Action

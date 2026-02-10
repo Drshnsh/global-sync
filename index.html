@@ -165,6 +165,14 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 border border-white/5">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duration</span>
+                    <select id="durationSelect" onchange="updateDuration(this.value)" class="bg-transparent py-4 text-[10px] font-bold text-blue-400 focus:outline-none cursor-pointer">
+                        <option value="0.5" class="bg-slate-900">30m</option>
+                        <option value="1" class="bg-slate-900" selected>1h</option>
+                        <option value="2" class="bg-slate-900">2h</option>
+                    </select>
+                </div>
                 <button id="futureToggle" onclick="toggleFuture()" class="glass px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 border-white/5 text-slate-500 hover:text-blue-400">
                     <div id="futureStatusDot" class="w-2 h-2 rounded-full bg-slate-700 transition-all"></div>
                     Preview Next Week
@@ -288,6 +296,12 @@
         const suggestionsPanel = document.getElementById('suggestionsPanel');
 
         let isFutureMode = false;
+        let meetingDuration = 1; // Default 1 hour
+
+        function updateDuration(val) {
+            meetingDuration = parseFloat(val);
+            render();
+        }
 
         function toggleFuture() {
             isFutureMode = !isFutureMode;
@@ -347,29 +361,42 @@
             suggestionsPanel.innerHTML = '';
             
             const renderSuggestions = (baseUTC, labelPrefix, cardClass = '') => {
-                const slots = [baseUTC, baseUTC + 1, baseUTC + 2];
-                slots.forEach((utcHour, i) => {
+                // Adjust windows to only show if they can fit the duration
+                if (commonStartUTC + meetingDuration > commonEndUTC && labelPrefix === 'Universal') {
+                    suggestionsPanel.innerHTML = '<div class="col-span-3 text-center py-10 glass text-slate-500 text-sm font-bold uppercase tracking-widest">No universal overlap for ' + (meetingDuration*60) + 'm duration</div>';
+                    return;
+                }
+
+                const slots = [baseUTC, baseUTC + (commonEndUTC - baseUTC - meetingDuration) / 2, commonEndUTC - meetingDuration];
+                const uniqueSlots = [...new Set(slots.map(s => Math.round(s * 4) / 4))].slice(0, 3);
+
+                uniqueSlots.forEach((utcHour, i) => {
                     const startUTC = (utcHour % 24 + 24) % 24;
                     const percent = (startUTC / 24) * 100;
                     
                     const card = document.createElement('div');
-                    card.className = `suggestion-card p-6 rounded-2xl cursor-pointer group ${cardClass}`;
+                    card.className = `suggestion-card p-6 rounded-2xl cursor-pointer group flex flex-col justify-between ${cardClass}`;
                     
                     let timeBreakdown = selectedCities.map(city => {
                         const offset = getTimezoneOffset(city.timezone, baseDate);
-                        return `<div class="flex justify-between text-[10px] font-bold border-b border-white/5 py-1 last:border-0">
+                        return `<div class="flex justify-between text-[10px] font-bold border-b border-white/5 py-1.5 last:border-0">
                             <span class="text-slate-400">${city.name}</span>
                             <span class="text-blue-400">${formatTime((startUTC + offset) * 60)}</span>
                         </div>`;
                     }).join('');
 
                     card.innerHTML = `
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">${labelPrefix} Slot #${i+1}</span>
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">${labelPrefix} Slot #${i+1}</span>
+                                <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                            </div>
+                            <div class="space-y-1 mb-6">${timeBreakdown}</div>
                         </div>
-                        <div class="space-y-1 mb-4">${timeBreakdown}</div>
-                        <p class="text-[9px] text-slate-500 font-medium uppercase tracking-widest text-center">Click to visualize</p>
+                        <div class="flex gap-2 mt-auto">
+                            <button onclick="event.stopPropagation(); copySummary(${startUTC})" class="flex-1 bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase tracking-widest py-2 rounded-lg transition-colors">Copy</button>
+                            <button onclick="event.stopPropagation(); openOutlook(${startUTC})" class="flex-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white text-[9px] font-black uppercase tracking-widest py-2 rounded-lg transition-all">Outlook</button>
+                        </div>
                     `;
                     card.onclick = () => moveScrubber(percent);
                     suggestionsPanel.appendChild(card);
@@ -422,6 +449,35 @@
                     dateLabel.innerText = formatDate(localDateTime);
                 }
             });
+        }
+
+        function openOutlook(startUTC) {
+            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
+            const start = new Date(baseDate);
+            start.setUTCHours(Math.floor(startUTC), (startUTC % 1) * 60, 0, 0);
+            
+            const end = new Date(start.getTime() + meetingDuration * 36e5);
+            
+            const formatISO = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
+            const url = `https://outlook.office.com/calendar/0/deeplink/compose?subject=Global%20Sync%20Meeting&startdt=${formatISO(start)}&enddt=${formatISO(end)}&body=Scheduled%20via%20Global%20Sync`;
+            window.open(url, '_blank');
+        }
+
+        function copySummary(startUTC) {
+            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
+            let summary = `📅 Proposed Meeting Slot (${formatDate(baseDate)}):\n\n`;
+            
+            selectedCities.forEach(city => {
+                const offset = getTimezoneOffset(city.timezone, baseDate);
+                const localTime = formatTime((startUTC + offset) * 60);
+                const localDate = new Date(baseDate);
+                localDate.setUTCHours(0,0,0,0);
+                localDate.setTime(localDate.getTime() + (startUTC + offset) * 36e5);
+                summary += `• ${city.name}: ${localTime} (${formatDate(localDate)})\n`;
+            });
+            
+            navigator.clipboard.writeText(summary);
+            alert('Meeting summary copied to clipboard!');
         }
 
         function render() {
@@ -530,6 +586,7 @@
                     commonTimeOverlay.classList.remove('hidden');
                     // Sidebar is 18rem (288px)
                     commonTimeOverlay.style.left = `calc(${(start/24)*100}% + 18rem)`;
+                    // Note: We show the FULL overlap window, suggestions find the specific slots within it.
                     commonTimeOverlay.style.width = `${((end-start)/24)*100}%`;
                 }
             } else {
