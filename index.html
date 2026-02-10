@@ -143,11 +143,15 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
     </style>
 </head>
-<body class="p-6 md:p-16 font-sans selection:bg-blue-500/30">
-    <div class="max-w-[1400px] mx-auto">
-        <header class="mb-16 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+<body class="h-screen flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden">
+    <div class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full p-6 md:p-12 overflow-hidden">
+        <header class="shrink-0 mb-12 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center shadow-2xl shadow-blue-500/20">
@@ -180,12 +184,12 @@
             </div>
         </header>
 
-        <div id="suggestionsPanel" class="hidden mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-float">
+        <div id="suggestionsPanel" class="hidden shrink-0 mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-float">
             <!-- Suggestions injected here -->
         </div>
 
-        <div class="glass p-10 mb-10 overflow-hidden relative shadow-inner">
-            <div id="statusNotice" class="mb-8 flex flex-wrap items-center gap-4">
+        <div class="flex-1 min-h-0 glass p-10 mb-10 overflow-hidden relative shadow-inner flex flex-col">
+            <div id="statusNotice" class="shrink-0 mb-8 flex flex-wrap items-center gap-4">
                 <div id="goldenHourNotice" class="hidden py-2 px-5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
                     Universal Window Available
@@ -196,9 +200,9 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto pb-6">
+            <div class="flex-1 overflow-x-auto overflow-y-auto pb-6 custom-scrollbar">
                 <div class="min-w-[1200px] relative">
-                    <div id="citiesList" class="space-y-12 relative">
+                    <div id="citiesList" class="space-y-12 relative min-h-full">
                         <!-- Common Time Overlay needs to be a sibling of city-rows for correct positioning -->
                         <div id="commonTimeOverlay" class="absolute top-0 bottom-0 pointer-events-none hidden common-time-highlight"></div>
                         <div id="scrubber" class="absolute top-0 bottom-0 hidden pointer-events-none z-[60]">
@@ -209,7 +213,7 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-8 opacity-60 hover:opacity-100 transition-opacity">
+        <div class="shrink-0 flex flex-wrap gap-8 opacity-60 hover:opacity-100 transition-opacity">
             <div class="flex items-center gap-3">
                 <div class="w-4 h-4 rounded bg-emerald-500/30 border border-emerald-500/50"></div>
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Business Window</span>
@@ -298,17 +302,11 @@
             render();
         }
 
-        const LEFT_COL_WIDTH_REM = 18; // Must match --left-col-width
+        const LEFT_COL_WIDTH_REM = 18; 
         const GRID_PADDING_REM = 1.5;
 
         function saveState() {
             localStorage.setItem('globalSync_v2', JSON.stringify(selectedCities));
-        }
-
-        function getTimezoneOffset(tz, baseTime = new Date()) {
-            const utcDate = new Date(baseTime.toLocaleString('en-US', { timeZone: 'UTC' }));
-            const tzDate = new Date(baseTime.toLocaleString('en-US', { timeZone: tz }));
-            return (tzDate.getTime() - utcDate.getTime()) / 36e5;
         }
 
         function formatTime(totalMinutes) {
@@ -398,7 +396,6 @@
                 if (label) {
                     label.innerText = formatTime((utcHours + offset) * 60);
                     label.style.left = `calc(${percent}%)`;
-                    // Adjust label to prevent clipping at edges
                     if (percent > 85) label.style.transform = 'translateX(-100%)';
                     else if (percent < 15) label.style.transform = 'translateX(0%)';
                     else label.style.transform = 'translateX(-50%)';
@@ -419,8 +416,6 @@
                 const offset = getTimezoneOffset(city.timezone, baseDate);
                 commonStartUTC = Math.max(commonStartUTC, city.start - offset);
                 commonEndUTC = Math.min(commonEndUTC, city.end - offset);
-                
-                // Detect DST Change
                 city.dstInfo = isDSTImminent(city.timezone, 7, baseDate);
             });
 
@@ -430,14 +425,14 @@
 
             selectedCities.forEach((city, index) => {
                 const row = document.createElement('div');
-                row.className = `city-row flex items-center group py-8 px-6 rounded-2xl transition-all duration-500 relative ${city.isHome ? 'home-city-row' : ''}`;
+                row.className = `city-row flex items-center group py-8 transition-all duration-500 relative border-b border-white/5 last:border-0 ${city.isHome ? 'home-city-row' : ''}`;
                 
+                const offset = getTimezoneOffset(city.timezone, baseDate);
                 const localTimeStr = baseDate.toLocaleTimeString('en-US', { 
                     timeZone: city.timezone, 
                     hour: '2-digit', minute: '2-digit', hour12: true 
                 });
                 
-                const offset = getTimezoneOffset(city.timezone, baseDate);
                 const utcDate = new Date(baseDate.toLocaleString('en-US', { timeZone: 'UTC' }));
                 const currentUtcPos = (utcDate.getHours() * 60 + utcDate.getMinutes()) / 1440 * 100;
                 
@@ -445,7 +440,7 @@
                 let bEnd = (city.end - offset + 24) % 24;
 
                 row.innerHTML = `
-                    <div class="w-72 shrink-0 pr-12 flex flex-col justify-center relative z-10">
+                    <div class="w-72 shrink-0 pr-12 pl-6 flex flex-col justify-center sticky left-0 z-20 bg-[#020617] group-hover:bg-[#0a0f1e] transition-colors">
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center gap-3 overflow-hidden">
                                 ${city.isHome ? '<svg xmlns="http://www.w3.org/2000/svg" class="text-amber-500 shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' : ''}
@@ -481,12 +476,9 @@
                         </div>
                     </div>
 
-                    <div class="flex-1 h-32 relative group/grid">
-                        <!-- Scrubber Label moved here to be sibling of the grid but NOT inside overflow-hidden -->
+                    <div class="flex-1 h-32 relative group/grid pr-6">
                         <div id="scrubberLabel-${index}" class="scrubber-label hidden top-[-30px]"></div>
-                        
                         <div class="h-full glass relative overflow-hidden bg-slate-950/20 border-white/5 shadow-inner">
-                            <!-- Localized Time Scale -->
                             <div class="absolute inset-x-0 bottom-2 flex justify-between px-3 text-[9px] font-bold text-slate-700 uppercase tracking-tighter z-0 pointer-events-none">
                                 ${Array.from({length: 13}).map((_, i) => {
                                     const h = i * 2;
@@ -494,20 +486,15 @@
                                     return `<span>${Math.floor(localH % 12 || 12)}${localH < 12 ? 'a' : 'p'}</span>`;
                                 }).join('')}
                             </div>
-
-                            <!-- Grid Markers -->
                             ${Array.from({length: 25}).map((_, i) => `
                                 <div class="hour-marker" style="left: ${(i/24)*100}%"></div>
                                 ${i < 24 ? `<div class="half-hour-marker" style="left: ${(i/24 + 1/48)*100}%"></div>` : ''}
                             `).join('')}
-                            
-                            <!-- Business Hours -->
                             ${bStart < bEnd ? 
                                 `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((bEnd-bStart)/24)*100}%"></div>` : 
                                 `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((24-bStart)/24)*100}%"></div>
                                  <div class="absolute top-0 bottom-0 business-hours" style="left: 0; width: ${(bEnd/24)*100}%"></div>`
                             }
-                            
                             <div class="current-time-marker" style="left: ${currentUtcPos}%"></div>
                         </div>
                     </div>`;
@@ -519,10 +506,9 @@
                 let end = (commonEndUTC % 24 + 24) % 24;
                 if (start < end) {
                     commonTimeOverlay.classList.remove('hidden');
-                    commonTimeOverlay.style.left = `calc(${(start/24)*100}% + 18rem + 1.5rem)`;
+                    // Sidebar is 18rem (288px)
+                    commonTimeOverlay.style.left = `calc(${(start/24)*100}% + 18rem)`;
                     commonTimeOverlay.style.width = `${((end-start)/24)*100}%`;
-                } else {
-                    commonTimeOverlay.classList.add('hidden');
                 }
             } else {
                 commonTimeOverlay.classList.add('hidden');
@@ -549,10 +535,10 @@
 
         citiesList.addEventListener('mousemove', (e) => {
             const rect = citiesList.getBoundingClientRect();
-            // 18rem (left col) + 1.5rem (padding)
-            const offsetX = 18 * 16 + 1.5 * 16;
-            const x = e.clientX - rect.left - offsetX;
-            const gridWidth = rect.width - offsetX - 1.5 * 16; // Right padding
+            // Sidebar width 18rem = 288px
+            const sidebarWidth = 18 * 16;
+            const x = e.clientX - rect.left - sidebarWidth;
+            const gridWidth = rect.width - sidebarWidth;
             
             if (x >= 0 && x <= gridWidth) {
                 const percent = (x / gridWidth) * 100;
@@ -560,7 +546,7 @@
                 totalMinutes = Math.round(totalMinutes / 15) * 15;
                 const snappedPercent = (totalMinutes / 1440) * 100;
                 
-                scrubber.style.left = `calc(${snappedPercent}% + 18rem + 1.5rem)`;
+                scrubber.style.left = `calc(${snappedPercent}% + 18rem)`;
                 updateScrubberLabels(snappedPercent);
                 scrubber.classList.remove('hidden');
                 document.querySelectorAll('.scrubber-label').forEach(l => l.classList.remove('hidden'));
@@ -576,15 +562,13 @@
         });
 
         window.addCity = (name, timezone) => {
-            if (!selectedCities.find(c => c.timezone === timezone)) {
-                selectedCities.push({ name, timezone, start: 9, end: 18, isHome: false });
-            }
+            if (!selectedCities.find(c => c.timezone === timezone)) selectedCities.push({ name, timezone, start: 9, end: 18, isHome: false });
             citySearch.value = ''; searchResults.classList.add('hidden'); render();
         };
 
         window.removeCity = (index) => { selectedCities.splice(index, 1); render(); };
         window.clearAll = () => { selectedCities = []; render(); };
-        document.addEventListener('click', (e) => { if (!citySearch.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.add('hidden'); });
+        document.addEventListener('click', (e) => { if (!citySearch.contains(e.target)) searchResults.classList.add('hidden'); });
 
         render();
         setInterval(render, 60000);
