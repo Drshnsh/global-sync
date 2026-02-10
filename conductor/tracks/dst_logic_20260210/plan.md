@@ -12,11 +12,11 @@ This plan outlines the steps to implement DST detection and visualization in Glo
 - [x] Task: Conductor - User Manual Verification 'Core DST Detection Logic' (Protocol in workflow.md) (5da9172)
 
 ## Phase 2: UI Implementation (Warnings & Badges)
-- [ ] Task: Design and Implement DST Warning Badge
-    - [ ] Create a high-contrast (Amber/Indigo) badge for city rows.
-    - [ ] Ensure the badge is visible but non-intrusive, following the "Minimalist Self-Explanation" guideline.
-- [ ] Task: Implement Hover Tooltip for DST Details
-    - [ ] Show the exact date and offset change when hovering over the DST badge.
+- [x] Task: Design and Implement DST Warning Badge (f3a2b1c)
+    - [x] Create a high-contrast (Amber/Indigo) badge for city rows.
+    - [x] Ensure the badge is visible but non-intrusive, following the "Minimalist Self-Explanation" guideline.
+- [x] Task: Implement Hover Tooltip for DST Details (f3a2b1c)
+    - [x] Show the exact date and offset change when hovering over the DST badge.
 - [ ] Task: Conductor - User Manual Verification 'UI Implementation (Warnings & Badges)' (Protocol in workflow.md)
 
 ## Phase 3: Future View & Impact Analysis
