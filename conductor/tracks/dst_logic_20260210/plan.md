@@ -6,9 +6,9 @@ This plan outlines the steps to implement DST detection and visualization in Glo
 - [x] Task: Research and Implement `isDSTImminent` Utility (3e5317c)
     - [ ] Create a JS utility function to check if a timezone has an offset change in the next 7 days.
     - [ ] Write unit tests for the detection logic using known DST transition dates.
-- [ ] Task: Integrate Detection into `render` Function
-    - [ ] Update the `selectedCities` data structure to include a `hasDSTChange` flag.
-    - [ ] Modify the main `render` loop to run the detection for each city.
+- [x] Task: Integrate Detection into `render` Function (38a7b2c)
+    - [x] Update the `selectedCities` data structure to include a `hasDSTChange` flag.
+    - [x] Modify the main `render` loop to run the detection for each city.
 - [ ] Task: Conductor - User Manual Verification 'Core DST Detection Logic' (Protocol in workflow.md)
 
 ## Phase 2: UI Implementation (Warnings & Badges)

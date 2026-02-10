@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Sync - Timezone Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-home: #f59e0b;
+            --left-col-width: 18rem;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+        }
+
+        .hour-marker {
+            position: absolute;
+            height: 100%;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 1;
+        }
+
+        .half-hour-marker {
+            position: absolute;
+            height: 30%;
+            bottom: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.02);
+            z-index: 1;
+        }
+
+        .business-hours {
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.25) 100%);
+            border-left: 1px solid rgba(16, 185, 129, 0.3);
+            border-right: 1px solid rgba(16, 185, 129, 0.3);
+            z-index: 2;
+        }
+
+        .home-city-row {
+            background: rgba(245, 158, 11, 0.03);
+            border-left: 4px solid var(--accent-home);
+        }
+
+        .common-time-highlight {
+            background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.15) 100%);
+            border-left: 2px solid var(--accent-blue);
+            border-right: 2px solid var(--accent-blue);
+            z-index: 5;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .current-time-marker {
+            width: 2px;
+            background: #ef4444;
+            height: 100%;
+            position: absolute;
+            z-index: 30;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            pointer-events: none;
+        }
+
+        .scrubber-line {
+            width: 2px;
+            background: rgba(255, 255, 255, 0.4);
+            height: 100%;
+            position: absolute;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        .scrubber-label {
+            position: absolute;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #020617;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            pointer-events: none;
+            transition: left 0.1s linear;
+        }
+
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .suggestion-card:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .city-row:hover .remove-btn, .city-row:hover .home-btn { opacity: 1; }
+        .remove-btn, .home-btn { opacity: 0; transition: opacity 0.2s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="p-6 md:p-16 font-sans selection:bg-blue-500/30">
+    <div class="max-w-[1400px] mx-auto">
+        <header class="mb-16 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center shadow-2xl shadow-blue-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="text-white" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-indigo-400">Global Sync</h1>
+                        <p class="text-slate-400 font-semibold tracking-wide mt-1 uppercase text-xs">Architectural Precision Time Planning</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button onclick="suggestMeetings()" class="glass px-8 py-4 text-sm font-extrabold text-emerald-400 bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-lg shadow-emerald-500/10 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    Analyze Best Slots
+                </button>
+                <div class="relative group flex-1 min-w-[320px]">
+                    <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </div>
+                    <input type="text" id="citySearch" placeholder="Search by City, Region or Country..."
+                        class="glass pl-14 pr-6 py-4 w-full transition-all bg-white/5 border-white/10 hover:border-white/20 focus:bg-white/10 focus:ring-4 ring-blue-500/5">
+                    <div id="searchResults" class="absolute top-full left-0 right-0 mt-3 glass z-[100] hidden max-h-80 overflow-y-auto shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10 bg-slate-900/95 backdrop-blur-2xl"></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="suggestionsPanel" class="hidden mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-float">
+            <!-- Suggestions injected here -->
+        </div>
+
+        <div class="glass p-10 mb-10 overflow-hidden relative shadow-inner">
+            <div id="statusNotice" class="mb-8 flex flex-wrap items-center gap-4">
+                <div id="goldenHourNotice" class="hidden py-2 px-5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    Universal Window Available
+                </div>
+                <div id="homeNotice" class="hidden py-2 px-5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    Referencing Home Base
+                </div>
+            </div>
+
+            <div class="overflow-x-auto pb-6">
+                <div class="min-w-[1200px] relative">
+                    <div id="citiesList" class="space-y-12 relative">
+                        <!-- Common Time Overlay needs to be a sibling of city-rows for correct positioning -->
+                        <div id="commonTimeOverlay" class="absolute top-0 bottom-0 pointer-events-none hidden common-time-highlight"></div>
+                        <div id="scrubber" class="absolute top-0 bottom-0 hidden pointer-events-none z-[60]">
+                            <div class="scrubber-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-8 opacity-60 hover:opacity-100 transition-opacity">
+            <div class="flex items-center gap-3">
+                <div class="w-4 h-4 rounded bg-emerald-500/30 border border-emerald-500/50"></div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Business Window</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-4 h-4 rounded bg-blue-500/30 border border-blue-500/50"></div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Common Slot</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-4 h-4 rounded border-l-2 border-amber-500 bg-amber-500/10"></div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Home Reference</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ALL_TIMEZONES = Intl.supportedValuesOf('timeZone');
+        const CITY_DATA = ALL_TIMEZONES.map(tz => {
+            const parts = tz.split('/');
+            const city = parts.pop().replace(/_/g, ' ');
+            const region = parts.join(' / ').replace(/_/g, ' ');
+            return { city, region, timezone: tz };
+        });
+
+        function getTimezoneOffset(tz, baseTime = new Date()) {
+            try {
+                const utcDate = new Date(baseTime.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const tzDate = new Date(baseTime.toLocaleString('en-US', { timeZone: tz }));
+                return (tzDate.getTime() - utcDate.getTime()) / 36e5;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function isDSTImminent(timezone, daysLimit = 7, baseDate = new Date()) {
+            const currentOffset = getTimezoneOffset(timezone, baseDate);
+            for (let i = 1; i <= daysLimit; i++) {
+                const futureDate = new Date(baseDate.getTime() + i * 24 * 36e5);
+                const futureOffset = getTimezoneOffset(timezone, futureDate);
+                if (futureOffset !== currentOffset) {
+                    return {
+                        imminent: true,
+                        currentOffset,
+                        nextOffset: futureOffset,
+                        daysUntil: i,
+                        nextDate: futureDate
+                    };
+                }
+            }
+            return { imminent: false, currentOffset };
+        }
+
+        let selectedCities = JSON.parse(localStorage.getItem('globalSync_v2')) || [
+            { name: 'Mumbai', timezone: 'Asia/Kolkata', start: 9, end: 18, isHome: true },
+            { name: 'London', timezone: 'Europe/London', start: 9, end: 18, isHome: false },
+            { name: 'New York', timezone: 'America/New_York', start: 9, end: 18, isHome: false }
+        ];
+
+        const citiesList = document.getElementById('citiesList');
+        const citySearch = document.getElementById('citySearch');
+        const searchResults = document.getElementById('searchResults');
+        const commonTimeOverlay = document.getElementById('commonTimeOverlay');
+        const goldenHourNotice = document.getElementById('goldenHourNotice');
+        const homeNotice = document.getElementById('homeNotice');
+        const scrubber = document.getElementById('scrubber');
+        const suggestionsPanel = document.getElementById('suggestionsPanel');
+
+        const LEFT_COL_WIDTH_REM = 18; // Must match --left-col-width
+        const GRID_PADDING_REM = 1.5;
+
+        function saveState() {
+            localStorage.setItem('globalSync_v2', JSON.stringify(selectedCities));
+        }
+
+        function getTimezoneOffset(tz, baseTime = new Date()) {
+            const utcDate = new Date(baseTime.toLocaleString('en-US', { timeZone: 'UTC' }));
+            const tzDate = new Date(baseTime.toLocaleString('en-US', { timeZone: tz }));
+            return (tzDate.getTime() - utcDate.getTime()) / 36e5;
+        }
+
+        function formatTime(totalMinutes) {
+            const h = Math.floor((totalMinutes / 60 + 24) % 24);
+            const m = Math.floor(Math.abs(totalMinutes % 60));
+            return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+        }
+
+        function updateBusinessHours(index, field, value) {
+            selectedCities[index][field] = parseInt(value);
+            render();
+        }
+
+        function setHome(index) {
+            selectedCities.forEach((c, i) => c.isHome = (i === index));
+            render();
+        }
+
+        function suggestMeetings() {
+            if (selectedCities.length === 0) return;
+            
+            let commonStartUTC = -Infinity;
+            let commonEndUTC = Infinity;
+
+            selectedCities.forEach(city => {
+                const offset = getTimezoneOffset(city.timezone);
+                commonStartUTC = Math.max(commonStartUTC, city.start - offset);
+                commonEndUTC = Math.min(commonEndUTC, city.end - offset);
+            });
+
+            suggestionsPanel.innerHTML = '';
+            
+            const renderSuggestions = (baseUTC, labelPrefix, cardClass = '') => {
+                const slots = [baseUTC, baseUTC + 1, baseUTC + 2];
+                slots.forEach((utcHour, i) => {
+                    const startUTC = (utcHour % 24 + 24) % 24;
+                    const percent = (startUTC / 24) * 100;
+                    
+                    const card = document.createElement('div');
+                    card.className = `suggestion-card p-6 rounded-2xl cursor-pointer group ${cardClass}`;
+                    
+                    let timeBreakdown = selectedCities.map(city => {
+                        const offset = getTimezoneOffset(city.timezone);
+                        return `<div class="flex justify-between text-[10px] font-bold border-b border-white/5 py-1 last:border-0">
+                            <span class="text-slate-400">${city.name}</span>
+                            <span class="text-blue-400">${formatTime((startUTC + offset) * 60)}</span>
+                        </div>`;
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">${labelPrefix} Slot #${i+1}</span>
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        </div>
+                        <div class="space-y-1 mb-4">${timeBreakdown}</div>
+                        <p class="text-[9px] text-slate-500 font-medium uppercase tracking-widest text-center">Click to visualize</p>
+                    `;
+                    card.onclick = () => moveScrubber(percent);
+                    suggestionsPanel.appendChild(card);
+                });
+            };
+
+            if (commonStartUTC < commonEndUTC) {
+                renderSuggestions(commonStartUTC, 'Universal');
+            } else {
+                const home = selectedCities.find(c => c.isHome) || selectedCities[0];
+                const offset = getTimezoneOffset(home.timezone);
+                renderSuggestions(home.start - offset, 'Home Base', 'border-amber-500/20');
+            }
+            suggestionsPanel.classList.remove('hidden');
+        }
+
+        function moveScrubber(percent) {
+            const xPos = `calc(${percent}% + var(--left-col-width) + var(--left-col-width-rem) === undefined ? 18rem : var(--left-col-width))`; 
+            // Better to use static calc since CSS vars might be tricky in JS injection
+            scrubber.style.left = `calc(${percent}% + 18rem + 1.5rem)`;
+            updateScrubberLabels(percent);
+            scrubber.classList.remove('hidden');
+            document.querySelectorAll('.scrubber-label').forEach(l => l.classList.remove('hidden'));
+        }
+
+        function updateScrubberLabels(percent) {
+            const utcHours = (percent / 100) * 24;
+            selectedCities.forEach((city, index) => {
+                const offset = getTimezoneOffset(city.timezone);
+                const label = document.getElementById(`scrubberLabel-${index}`);
+                if (label) {
+                    label.innerText = formatTime((utcHours + offset) * 60);
+                    label.style.left = `calc(${percent}%)`;
+                    // Adjust label to prevent clipping at edges
+                    if (percent > 85) label.style.transform = 'translateX(-100%)';
+                    else if (percent < 15) label.style.transform = 'translateX(0%)';
+                    else label.style.transform = 'translateX(-50%)';
+                }
+            });
+        }
+
+        function render() {
+            citiesList.querySelectorAll('.city-row').forEach(row => row.remove());
+            saveState();
+
+            let commonStartUTC = -Infinity;
+            let commonEndUTC = Infinity;
+
+            selectedCities.forEach(city => {
+                const offset = getTimezoneOffset(city.timezone);
+                commonStartUTC = Math.max(commonStartUTC, city.start - offset);
+                commonEndUTC = Math.min(commonEndUTC, city.end - offset);
+                
+                // Detect DST Change
+                city.dstInfo = isDSTImminent(city.timezone);
+            });
+
+            const hasCommon = commonStartUTC < commonEndUTC;
+            goldenHourNotice.classList.toggle('hidden', !hasCommon);
+            homeNotice.classList.toggle('hidden', hasCommon);
+
+            selectedCities.forEach((city, index) => {
+                const row = document.createElement('div');
+                row.className = `city-row flex items-center group py-8 px-6 rounded-2xl transition-all duration-500 relative ${city.isHome ? 'home-city-row' : ''}`;
+                
+                const now = new Date();
+                const localTimeStr = now.toLocaleTimeString('en-US', { 
+                    timeZone: city.timezone, 
+                    hour: '2-digit', minute: '2-digit', hour12: true 
+                });
+                
+                const offset = getTimezoneOffset(city.timezone);
+                const utcNow = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+                const currentUtcPos = (utcNow.getHours() * 60 + utcNow.getMinutes()) / 1440 * 100;
+                
+                let bStart = (city.start - offset + 24) % 24;
+                let bEnd = (city.end - offset + 24) % 24;
+
+                row.innerHTML = `
+                    <div class="w-72 shrink-0 pr-12 flex flex-col justify-center relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                ${city.isHome ? '<svg xmlns="http://www.w3.org/2000/svg" class="text-amber-500 shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' : ''}
+                                <span class="font-extrabold text-slate-100 truncate text-2xl tracking-tight leading-none">${city.name}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="text-[10px] font-bold font-mono text-slate-500 bg-white/5 px-2 py-1 rounded uppercase tracking-tighter">UTC${offset >= 0 ? '+' : ''}${offset}</span>
+                            <span class="text-xs font-black text-blue-400 uppercase tracking-widest">${localTimeStr}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <select onchange="updateBusinessHours(${index}, 'start', this.value)" class="bg-slate-800/40 text-[10px] text-emerald-400 font-black border border-emerald-500/10 rounded px-2.5 py-1.5 outline-none cursor-pointer hover:border-emerald-500/30 transition-colors">
+                                ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.start === i ? 'selected' : ''} class="bg-slate-900">${i % 12 || 12}${i < 12 ? 'am' : 'pm'}</option>`).join('')}
+                            </select>
+                            <span class="text-slate-700 font-bold">—</span>
+                            <select onchange="updateBusinessHours(${index}, 'end', this.value)" class="bg-slate-800/40 text-[10px] text-emerald-400 font-black border border-emerald-500/10 rounded px-2.5 py-1.5 outline-none cursor-pointer hover:border-emerald-500/30 transition-colors">
+                                ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.end === i ? 'selected' : ''} class="bg-slate-900">${i % 12 || 12}${i < 12 ? 'am' : 'pm'}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="mt-4 flex items-center gap-2">
+                             <button onclick="setHome(${index})" class="home-btn p-2 rounded-lg text-slate-500 hover:text-amber-400 hover:bg-amber-400/10 transition-all ${city.isHome ? 'opacity-100 text-amber-400' : ''}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            </button>
+                            <button onclick="removeCity(${index})" class="remove-btn p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 h-32 relative group/grid">
+                        <!-- Scrubber Label moved here to be sibling of the grid but NOT inside overflow-hidden -->
+                        <div id="scrubberLabel-${index}" class="scrubber-label hidden top-[-30px]"></div>
+                        
+                        <div class="h-full glass relative overflow-hidden bg-slate-950/20 border-white/5 shadow-inner">
+                            <!-- Localized Time Scale -->
+                            <div class="absolute inset-x-0 bottom-2 flex justify-between px-3 text-[9px] font-bold text-slate-700 uppercase tracking-tighter z-0 pointer-events-none">
+                                ${Array.from({length: 13}).map((_, i) => {
+                                    const h = i * 2;
+                                    const localH = (h + offset + 24) % 24;
+                                    return `<span>${Math.floor(localH % 12 || 12)}${localH < 12 ? 'a' : 'p'}</span>`;
+                                }).join('')}
+                            </div>
+
+                            <!-- Grid Markers -->
+                            ${Array.from({length: 25}).map((_, i) => `
+                                <div class="hour-marker" style="left: ${(i/24)*100}%"></div>
+                                ${i < 24 ? `<div class="half-hour-marker" style="left: ${(i/24 + 1/48)*100}%"></div>` : ''}
+                            `).join('')}
+                            
+                            <!-- Business Hours -->
+                            ${bStart < bEnd ? 
+                                `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((bEnd-bStart)/24)*100}%"></div>` : 
+                                `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((24-bStart)/24)*100}%"></div>
+                                 <div class="absolute top-0 bottom-0 business-hours" style="left: 0; width: ${(bEnd/24)*100}%"></div>`
+                            }
+                            
+                            <div class="current-time-marker" style="left: ${currentUtcPos}%"></div>
+                        </div>
+                    </div>`;
+                citiesList.appendChild(row);
+            });
+
+            if (hasCommon) {
+                let start = (commonStartUTC % 24 + 24) % 24;
+                let end = (commonEndUTC % 24 + 24) % 24;
+                if (start < end) {
+                    commonTimeOverlay.classList.remove('hidden');
+                    commonTimeOverlay.style.left = `calc(${(start/24)*100}% + 18rem + 1.5rem)`;
+                    commonTimeOverlay.style.width = `${((end-start)/24)*100}%`;
+                } else {
+                    commonTimeOverlay.classList.add('hidden');
+                }
+            } else {
+                commonTimeOverlay.classList.add('hidden');
+            }
+        }
+
+        citySearch.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase().trim();
+            if (val.length < 2) { searchResults.classList.add('hidden'); return; }
+            const matches = CITY_DATA.filter(c => c.city.toLowerCase().includes(val) || c.region.toLowerCase().includes(val)).slice(0, 10);
+            if (matches.length > 0) {
+                searchResults.innerHTML = matches.map(m => `
+                    <div class="px-6 py-4 hover:bg-blue-500/10 cursor-pointer border-b border-white/5 last:border-0 flex items-center justify-between group" onclick="addCity('${m.city}', '${m.timezone}')">
+                        <div>
+                            <span class="font-black text-slate-100 group-hover:text-blue-400 transition-colors uppercase text-sm tracking-tight">${m.city}</span>
+                            <span class="text-[10px] text-slate-500 ml-3 font-bold uppercase tracking-widest">${m.region}</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:translate-x-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </div>
+                `).join('');
+                searchResults.classList.remove('hidden');
+            }
+        });
+
+        citiesList.addEventListener('mousemove', (e) => {
+            const rect = citiesList.getBoundingClientRect();
+            // 18rem (left col) + 1.5rem (padding)
+            const offsetX = 18 * 16 + 1.5 * 16;
+            const x = e.clientX - rect.left - offsetX;
+            const gridWidth = rect.width - offsetX - 1.5 * 16; // Right padding
+            
+            if (x >= 0 && x <= gridWidth) {
+                const percent = (x / gridWidth) * 100;
+                let totalMinutes = (percent / 100) * 1440;
+                totalMinutes = Math.round(totalMinutes / 15) * 15;
+                const snappedPercent = (totalMinutes / 1440) * 100;
+                
+                scrubber.style.left = `calc(${snappedPercent}% + 18rem + 1.5rem)`;
+                updateScrubberLabels(snappedPercent);
+                scrubber.classList.remove('hidden');
+                document.querySelectorAll('.scrubber-label').forEach(l => l.classList.remove('hidden'));
+            } else { 
+                scrubber.classList.add('hidden'); 
+                document.querySelectorAll('.scrubber-label').forEach(l => l.classList.add('hidden'));
+            }
+        });
+
+        citiesList.addEventListener('mouseleave', () => {
+            scrubber.classList.add('hidden');
+            document.querySelectorAll('.scrubber-label').forEach(l => l.classList.add('hidden'));
+        });
+
+        window.addCity = (name, timezone) => {
+            if (!selectedCities.find(c => c.timezone === timezone)) {
+                selectedCities.push({ name, timezone, start: 9, end: 18, isHome: false });
+            }
+            citySearch.value = ''; searchResults.classList.add('hidden'); render();
+        };
+
+        window.removeCity = (index) => { selectedCities.splice(index, 1); render(); };
+        window.clearAll = () => { selectedCities = []; render(); };
+        document.addEventListener('click', (e) => { if (!citySearch.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.add('hidden'); });
+
+        render();
+        setInterval(render, 60000);
+    </script>
+</body>
+</html>
