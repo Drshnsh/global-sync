@@ -23,140 +23,198 @@
     <style>
         :root {
             --bg-deep: #020617;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --accent-blue: #3b82f6;
             --accent-emerald: #10b981;
             --accent-home: #f59e0b;
-            --forbidden-zone: rgba(239, 68, 68, 0.08); /* Soft red for sleep hours */
-            --left-col-width: 18rem;
+            --forbidden-zone: rgba(239, 68, 68, 0.05);
+            --left-col-width: 20rem;
         }
 
         body {
             background-color: var(--bg-deep);
             background-image: 
-                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
             min-height: 100vh;
-            color: #f8fafc;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
         }
 
         .glass {
             background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
             border: 1px solid var(--glass-border);
-            border-radius: 1rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-hover {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-hover:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
 
         .hour-marker {
             position: absolute;
             height: 100%;
-            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 1px solid rgba(255, 255, 255, 0.03);
             z-index: 1;
-        }
-
-        .forbidden-overlay {
-            background: var(--forbidden-zone);
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .business-hours {
-            background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.25) 100%);
-            border-left: 1px solid rgba(16, 185, 129, 0.3);
-            border-right: 1px solid rgba(16, 185, 129, 0.3);
-            z-index: 2;
         }
 
         .home-city-row {
-            background: rgba(245, 158, 11, 0.03);
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
             border-left: 4px solid var(--accent-home);
         }
 
-        .common-time-highlight {
-            background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.15) 100%);
-            border-left: 2px solid var(--accent-blue);
-            border-right: 2px solid var(--accent-blue);
-            z-index: 5;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .current-time-marker {
-            width: 2px;
-            background: #ef4444;
-            height: 100%;
-            position: absolute;
-            z-index: 30;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
-            pointer-events: none;
-        }
-
         .scrubber-line {
-            width: 2px;
-            background: rgba(255, 255, 255, 0.4);
+            width: var(--scrubber-width, 40px);
+            background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.2) 100%);
+            border-left: 1px solid rgba(59, 130, 246, 0.6);
+            border-right: 1px solid rgba(59, 130, 246, 0.6);
             height: 100%;
             position: absolute;
             z-index: 40;
             pointer-events: none;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
         }
 
         .scrubber-label {
             position: absolute;
-            transform: translateX(-50%);
             background: #ffffff;
             color: #020617;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
             font-weight: 800;
             white-space: nowrap;
             z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
             pointer-events: none;
-            transition: left 0.1s linear;
+            transition: left 0.15s cubic-bezier(0.2, 0, 0, 1), transform 0.2s ease;
+            letter-spacing: 0.02em;
         }
 
-        .suggestion-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--glass-border);
+        .hour-block {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            min-width: 44px;
         }
 
-        .suggestion-card:hover {
-            background: rgba(59, 130, 246, 0.08);
+        .hour-block.business {
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .hour-block.business:hover {
+            background: rgba(16, 185, 129, 0.15) !important;
+        }
+
+        .hour-block.forbidden {
+            background: rgba(239, 68, 68, 0.03);
+        }
+
+        .hour-block.home-highlight {
+            border-top: 2px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .hour-block .time-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(241, 245, 249, 0.4);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hour-block.business .time-label {
+            color: rgba(16, 185, 129, 0.7);
+        }
+
+        .hour-block .date-change-label {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            font-size: 8px;
+            font-weight: 900;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.8;
+        }
+
+        .hour-block:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+            transform: scale(1.05);
+            z-index: 20;
+            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .date-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 70px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .date-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
             border-color: rgba(59, 130, 246, 0.3);
-            transform: translateY(-4px);
+            transform: translateY(-2px);
         }
 
-        .city-row:hover .remove-btn, .city-row:hover .home-btn { opacity: 1; }
-        .remove-btn, .home-btn { opacity: 0; transition: opacity 0.2s; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+        .date-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.5);
         }
-        .animate-float { animation: float 4s ease-in-out infinite; }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .date-btn.active .date-day, .date-btn.active .date-num { color: #ffffff; }
+
+        .date-day { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; letter-spacing: 0.05em; }
+        .date-num { font-size: 18px; font-weight: 800; color: #f1f5f9; line-height: 1; }
+
+        .action-btn {
+            @apply p-2 rounded-lg transition-all duration-200;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; border: 2px solid rgba(0, 0, 0, 0.2); }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
 
         @media (max-width: 768px) {
             :root { --left-col-width: 100%; }
-            .city-row { flex-direction: column; align-items: stretch; padding: 1rem !important; }
-            .city-row > div:first-child { width: 100% !important; position: relative !important; padding-left: 0 !important; padding-right: 0 !important; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
-            .group\/grid { height: 6rem !important; }
-            header { gap: 1.5rem !important; }
-            #suggestionsPanel { grid-template-columns: 1fr !important; }
+            .city-row { flex-direction: column; padding: 1.5rem !important; }
+            .city-row > div:first-child { width: 100% !important; margin-bottom: 1.5rem; }
         }
     </style>
 </head>
@@ -175,6 +233,9 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                <button id="clockFormatToggle" onclick="toggleClockFormat()" class="glass px-4 h-12 text-[10px] font-black uppercase tracking-widest transition-all border-white/5 text-slate-400 hover:text-blue-400">
+                    Format: <span id="clockFormatText">12H</span>
+                </button>
                 <div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 border border-white/5 h-12">
                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duration</span>
                     <select id="durationSelect" onchange="updateDuration(this.value)" class="bg-transparent py-4 text-[10px] font-bold text-blue-400 focus:outline-none cursor-pointer">
@@ -183,10 +244,6 @@
                         <option value="2" class="bg-slate-900">2h</option>
                     </select>
                 </div>
-                <button id="futureToggle" onclick="toggleFuture()" class="glass px-5 h-12 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 border-white/5 text-slate-500 hover:text-blue-400" title="Verifies if any timezones change (DST) in the next 7 days.">
-                    <div id="futureStatusDot" class="w-2 h-2 rounded-full bg-slate-700 transition-all"></div>
-                    Verify DST Shift
-                </button>
                 <div class="relative group h-12">
                     <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -203,20 +260,27 @@
 
         <div id="suggestionsPanel" class="hidden shrink-0 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
+        <div class="shrink-0 mb-6 flex items-center gap-4">
+            <div id="dateStrip" class="flex gap-2">
+                <!-- Dates will be injected here -->
+            </div>
+            <div class="h-10 w-px bg-white/10 mx-2"></div>
+            <div class="flex items-center gap-3">
+                <input type="date" id="calendarPicker" onchange="setDate(this.value)" class="glass bg-white/5 border-white/10 px-4 h-12 text-[10px] font-bold text-blue-400 focus:outline-none cursor-pointer">
+                <button onclick="resetDate()" class="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors">Today</button>
+            </div>
+        </div>
+
         <div class="flex-1 min-h-0 glass p-6 mb-6 overflow-hidden relative shadow-inner flex flex-col">
             <div id="statusNotice" class="shrink-0 mb-4 flex flex-wrap items-center gap-4">
                 <div id="goldenHourNotice" class="hidden py-1.5 px-4 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
                     Ideal Window
                 </div>
-                <div id="homeNotice" class="hidden py-1.5 px-4 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                    Social Guardrail Active
-                </div>
             </div>
 
             <div class="flex-1 overflow-x-auto overflow-y-auto pb-4 custom-scrollbar">
-                <div class="min-w-[1200px] relative">
+                <div class="min-w-[1300px] relative">
                     <div id="citiesList" class="space-y-4 relative min-h-full">
                         <div id="commonTimeOverlay" class="absolute top-0 bottom-0 pointer-events-none hidden common-time-highlight"></div>
                         <div id="scrubber" class="absolute top-0 bottom-0 hidden pointer-events-none z-[60]">
@@ -244,10 +308,76 @@
     </div>
 
     <script>
+        const MAJOR_CITIES = [
+            { city: 'London', region: 'Europe', timezone: 'Europe/London' },
+            { city: 'New York', region: 'Americas', timezone: 'America/New_York' },
+            { city: 'Mumbai', region: 'Asia', timezone: 'Asia/Kolkata' },
+            { city: 'Tokyo', region: 'Asia', timezone: 'Asia/Tokyo' },
+            { city: 'Sydney', region: 'Australia', timezone: 'Australia/Sydney' },
+            { city: 'Melbourne', region: 'Australia', timezone: 'Australia/Melbourne' },
+            { city: 'Brisbane', region: 'Australia', timezone: 'Australia/Brisbane' },
+            { city: 'Perth', region: 'Australia', timezone: 'Australia/Perth' },
+            { city: 'Auckland', region: 'New Zealand', timezone: 'Pacific/Auckland' },
+            { city: 'Wellington', region: 'New Zealand', timezone: 'Pacific/Auckland' },
+            { city: 'Christchurch', region: 'New Zealand', timezone: 'Pacific/Auckland' },
+            { city: 'Dunedin', region: 'New Zealand', timezone: 'Pacific/Auckland' },
+            { city: 'Hamilton', region: 'New Zealand', timezone: 'Pacific/Auckland' },
+            { city: 'Paris', region: 'Europe', timezone: 'Europe/Paris' },
+            { city: 'Berlin', region: 'Europe', timezone: 'Europe/Berlin' },
+            { city: 'Dubai', region: 'Asia', timezone: 'Asia/Dubai' },
+            { city: 'Singapore', region: 'Asia', timezone: 'Asia/Singapore' },
+            { city: 'Hong Kong', region: 'Asia', timezone: 'Asia/Hong_Kong' },
+            { city: 'Los Angeles', region: 'Americas', timezone: 'America/Los_Angeles' },
+            { city: 'Chicago', region: 'Americas', timezone: 'America/Chicago' },
+            { city: 'Toronto', region: 'Americas', timezone: 'America/Toronto' },
+            { city: 'Montreal', region: 'Americas', timezone: 'America/Toronto' },
+            { city: 'Vancouver', region: 'Americas', timezone: 'America/Vancouver' },
+            { city: 'Sao Paulo', region: 'Americas', timezone: 'America/Sao_Paulo' },
+            { city: 'Lagos', region: 'Africa', timezone: 'Africa/Lagos' },
+            { city: 'Cairo', region: 'Africa', timezone: 'Africa/Cairo' },
+            { city: 'Johannesburg', region: 'Africa', timezone: 'Africa/Johannesburg' },
+            { city: 'Moscow', region: 'Europe', timezone: 'Europe/Moscow' },
+            { city: 'Istanbul', region: 'Europe/Asia', timezone: 'Europe/Istanbul' },
+            { city: 'Seoul', region: 'Asia', timezone: 'Asia/Seoul' },
+            { city: 'Bangkok', region: 'Asia', timezone: 'Asia/Bangkok' },
+            { city: 'Jakarta', region: 'Asia', timezone: 'Asia/Jakarta' },
+            { city: 'San Francisco', region: 'Americas', timezone: 'America/Los_Angeles' },
+            { city: 'Seattle', region: 'Americas', timezone: 'America/Los_Angeles' },
+            { city: 'Austin', region: 'Americas', timezone: 'America/Chicago' },
+            { city: 'Miami', region: 'Americas', timezone: 'America/New_York' },
+            { city: 'Mexico City', region: 'Americas', timezone: 'America/Mexico_City' },
+            { city: 'Buenos Aires', region: 'Americas', timezone: 'America/Argentina/Buenos_Aires' },
+            { city: 'Santiago', region: 'Americas', timezone: 'America/Santiago' },
+            { city: 'Madrid', region: 'Europe', timezone: 'Europe/Madrid' },
+            { city: 'Rome', region: 'Europe', timezone: 'Europe/Rome' },
+            { city: 'Amsterdam', region: 'Europe', timezone: 'Europe/Amsterdam' },
+            { city: 'Stockholm', region: 'Europe', timezone: 'Europe/Stockholm' },
+            { city: 'Zurich', region: 'Europe', timezone: 'Europe/Zurich' },
+            { city: 'Nairobi', region: 'Africa', timezone: 'Africa/Nairobi' },
+            { city: 'Tel Aviv', region: 'Asia', timezone: 'Asia/Tel_Aviv' },
+            { city: 'Riyadh', region: 'Asia', timezone: 'Asia/Riyadh' },
+            { city: 'Beijing', region: 'Asia', timezone: 'Asia/Shanghai' },
+            { city: 'Shanghai', region: 'Asia', timezone: 'Asia/Shanghai' },
+            { city: 'Bengaluru', region: 'Asia', timezone: 'Asia/Kolkata' },
+            { city: 'New Delhi', region: 'Asia', timezone: 'Asia/Kolkata' },
+            { city: 'Kolkata', region: 'Asia', timezone: 'Asia/Kolkata' },
+            { city: 'Hyderabad', region: 'Asia', timezone: 'Asia/Kolkata' },
+            { city: 'Chennai', region: 'Asia', timezone: 'Asia/Kolkata' }
+        ];
+
         const ALL_TIMEZONES = Intl.supportedValuesOf('timeZone');
-        const CITY_DATA = ALL_TIMEZONES.map(tz => {
+        const DYNAMIC_CITY_DATA = ALL_TIMEZONES.map(tz => {
             const parts = tz.split('/');
-            return { city: parts.pop().replace(/_/g, ' '), region: parts.join(' / ').replace(/_/g, ' '), timezone: tz };
+            const city = parts.pop().replace(/_/g, ' ');
+            return { city, region: parts.join(' / ').replace(/_/g, ' '), timezone: tz };
+        });
+
+        // Merge and deduplicate
+        const CITY_DATA = [...MAJOR_CITIES];
+        DYNAMIC_CITY_DATA.forEach(dc => {
+            if (!CITY_DATA.find(c => c.timezone === dc.timezone && c.city.toLowerCase() === dc.city.toLowerCase())) {
+                CITY_DATA.push(dc);
+            }
         });
 
         function getTimezoneOffset(tz, baseTime = new Date()) {
@@ -285,29 +415,91 @@
         const searchResults = document.getElementById('searchResults');
         const commonTimeOverlay = document.getElementById('commonTimeOverlay');
         const goldenHourNotice = document.getElementById('goldenHourNotice');
-        const homeNotice = document.getElementById('homeNotice');
         const scrubber = document.getElementById('scrubber');
         const suggestionsPanel = document.getElementById('suggestionsPanel');
+        const dateStrip = document.getElementById('dateStrip');
+        const calendarPicker = document.getElementById('calendarPicker');
 
         let isFutureMode = false;
+        let is24Hour = JSON.parse(localStorage.getItem('globalSync_is24h')) || false;
         let meetingDuration = 1;
+        let baseDate = new Date();
+        baseDate.setHours(0,0,0,0);
+
+        function toggleClockFormat() {
+            is24Hour = !is24Hour;
+            localStorage.setItem('globalSync_is24h', JSON.stringify(is24Hour));
+            updateClockToggleUI();
+            render();
+        }
+
+        function updateClockToggleUI() {
+            document.getElementById('clockFormatText').innerText = is24Hour ? '24H' : '12H';
+        }
 
         function updateDuration(val) { meetingDuration = parseFloat(val); render(); }
 
-        function toggleFuture() {
-            isFutureMode = !isFutureMode;
-            const btn = document.getElementById('futureToggle');
-            const dot = document.getElementById('futureStatusDot');
-            btn.innerText = isFutureMode ? 'Checking Next Week' : 'Verify DST Shift';
-            btn.prepend(dot);
+        function setDate(dateStr) {
+            baseDate = new Date(dateStr);
+            baseDate.setHours(0,0,0,0);
             render();
+        }
+
+        function resetDate() {
+            baseDate = new Date();
+            baseDate.setHours(0,0,0,0);
+            render();
+        }
+
+        function renderDateStrip() {
+            updateClockToggleUI();
+            dateStrip.innerHTML = '';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                
+                const btn = document.createElement('div');
+                const isActive = d.getTime() === baseDate.getTime();
+                btn.className = `date-btn ${isActive ? 'active' : ''}`;
+                
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                const dayNum = d.getDate();
+                const monthName = d.toLocaleDateString('en-US', { month: 'short' });
+
+                btn.innerHTML = `
+                    <span class="date-day">${dayName}</span>
+                    <span class="date-num">${dayNum}</span>
+                    <span class="date-day">${monthName}</span>
+                `;
+                
+                btn.onclick = () => {
+                    baseDate = new Date(d);
+                    render();
+                };
+                dateStrip.appendChild(btn);
+            }
+            
+            calendarPicker.value = baseDate.toISOString().split('T')[0];
         }
 
         function saveState() { localStorage.setItem('globalSync_v2', JSON.stringify(selectedCities)); }
 
         function formatTime(totalMinutes) {
             const h = Math.floor((totalMinutes / 60 + 24) % 24), m = Math.floor(Math.abs(totalMinutes % 60));
-            return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+            if (is24Hour) {
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            }
+            return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}`;
+        }
+
+        function formatHourLabel(h) {
+            if (is24Hour) return h.toString().padStart(2, '0');
+            const suffix = h >= 12 ? 'pm' : 'am';
+            const displayH = h % 12 || 12;
+            return `${displayH}${suffix}`;
         }
 
         function updateBusinessHours(index, field, value) { selectedCities[index][field] = parseInt(value); render(); }
@@ -363,28 +555,41 @@
         }
 
         function moveScrubber(percent) {
-            scrubber.style.left = `calc(${percent}% + 18rem)`;
+            const rect = citiesList.getBoundingClientRect();
+            const offsetX = 18 * 16;
+            const gridWidth = rect.width - offsetX - 16;
+            scrubber.style.left = `${(percent / 100) * gridWidth + offsetX}px`;
             updateScrubberLabels(percent);
             scrubber.classList.remove('hidden');
             document.querySelectorAll('.scrubber-label').forEach(l => l.classList.remove('hidden'));
         }
 
         function updateScrubberLabels(percent) {
+            const rect = citiesList.getBoundingClientRect();
+            const offsetX = 18 * 16;
+            const gridWidth = rect.width - offsetX - 16;
             const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
             const utcHours = (percent / 100) * 24;
             selectedCities.forEach((city, index) => {
                 const offset = getTimezoneOffset(city.timezone, baseDate);
-                const localDateTime = new Date(baseDate.getTime());
-                localDateTime.setUTCHours(0, 0, 0, 0);
-                localDateTime.setTime(localDateTime.getTime() + (utcHours + offset) * 36e5);
+                const startTimeMinutes = (utcHours + offset) * 60;
+                const endTimeMinutes = startTimeMinutes + (meetingDuration * 60);
+                
                 const label = document.getElementById(`scrubberLabel-${index}`);
                 const dateLabel = document.getElementById(`dateLabel-${index}`);
+                
                 if (label) {
-                    label.innerText = formatTime((utcHours + offset) * 60);
-                    label.style.left = `${percent}%`;
-                    label.style.transform = percent > 85 ? 'translateX(-100%)' : (percent < 15 ? 'translateX(0%)' : 'translateX(-50%)');
+                    label.innerText = `${formatTime(startTimeMinutes)} - ${formatTime(endTimeMinutes)}`;
+                    label.style.left = `${(percent / 100) * gridWidth}px`;
+                    label.style.transform = percent > 70 ? 'translateX(-100%)' : 'translateX(0%)';
                 }
-                if (dateLabel) dateLabel.innerText = formatDate(localDateTime);
+                
+                if (dateLabel) {
+                    const localDateTime = new Date(baseDate.getTime());
+                    localDateTime.setUTCHours(0, 0, 0, 0);
+                    localDateTime.setTime(localDateTime.getTime() + (utcHours + offset) * 36e5);
+                    dateLabel.innerText = formatDate(localDateTime);
+                }
             });
         }
 
@@ -398,77 +603,101 @@
         function render() {
             citiesList.querySelectorAll('.city-row').forEach(row => row.remove());
             saveState();
-            const baseDate = isFutureMode ? new Date(Date.now() + 7 * 24 * 36e5) : new Date();
+            renderDateStrip();
+            // In render function, use the global baseDate instead of local redeclaration
+            const displayDate = baseDate;
             let commonStartUTC = -Infinity, commonEndUTC = Infinity;
             selectedCities.forEach(city => {
-                const offset = getTimezoneOffset(city.timezone, baseDate);
+                const offset = getTimezoneOffset(city.timezone, displayDate);
                 commonStartUTC = Math.max(commonStartUTC, city.start - offset);
                 commonEndUTC = Math.min(commonEndUTC, city.end - offset);
-                city.dstInfo = isDSTImminent(city.timezone, 7, baseDate);
+                city.dstInfo = isDSTImminent(city.timezone, 7, displayDate);
             });
             const hasCommon = commonStartUTC < commonEndUTC;
             goldenHourNotice.classList.toggle('hidden', !hasCommon);
-            homeNotice.classList.toggle('hidden', false); // Always show status of guardrails
 
             selectedCities.forEach((city, index) => {
                 const row = document.createElement('div');
                 row.className = `city-row flex items-center group py-4 relative border-b border-white/5 last:border-0 ${city.isHome ? 'home-city-row' : ''}`;
-                const offset = getTimezoneOffset(city.timezone, baseDate);
-                const localTimeStr = baseDate.toLocaleTimeString('en-US', { timeZone: city.timezone, hour: '2-digit', minute: '2-digit', hour12: true });
-                let bStart = (city.start - offset + 24) % 24, bEnd = (city.end - offset + 24) % 24;
-                // Forbidden zone (11pm - 7am local)
-                let fStart = (23 - offset + 24) % 24, fEnd = (7 - offset + 24) % 24;
+                const offset = getTimezoneOffset(city.timezone, displayDate);
+                const localTimeStr = displayDate.toLocaleTimeString('en-US', { timeZone: city.timezone, hour: '2-digit', minute: '2-digit', hour12: true });
+                
+                // Generate 24 hour blocks
+                let hourBlocksHtml = '';
+                let prevLocalDate = null;
+
+                for (let hUTC = 0; hUTC < 24; hUTC++) {
+                    const localH = (hUTC + offset + 24) % 24;
+                    const isBusiness = localH >= city.start && localH < city.end;
+                    const isForbidden = (localH >= 23 || localH < 7);
+                    
+                    // Date change detection
+                    const blockDate = new Date(displayDate.getTime());
+                    blockDate.setUTCHours(hUTC, 0, 0, 0);
+                    const localDateObj = new Date(blockDate.toLocaleString('en-US', { timeZone: city.timezone }));
+                    const localDateStr = formatDate(localDateObj);
+                    const showDate = prevLocalDate !== localDateStr;
+                    prevLocalDate = localDateStr;
+
+                    hourBlocksHtml += `
+                        <div class="hour-block ${isBusiness ? 'business' : ''} ${isForbidden ? 'forbidden' : ''} ${city.isHome ? 'home-highlight' : ''}">
+                            ${showDate ? `<span class="date-change-label">${localDateStr}</span>` : ''}
+                            <span class="time-label">${formatHourLabel(localH)}</span>
+                        </div>
+                    `;
+                }
 
                 row.innerHTML = `
-                    <div class="w-72 shrink-0 pr-8 pl-4 flex flex-col justify-center sticky left-0 z-20 bg-[#020617] group-hover:bg-[#0a0f1e] transition-colors">
-                        <div class="flex items-center justify-between mb-1.5">
+                    <div class="w-72 shrink-0 pr-6 pl-4 flex flex-col justify-center sticky left-0 z-20 bg-[#020617]/95 backdrop-blur-md group-hover:bg-[#0a0f1e] transition-colors">
+                        <div class="flex items-center justify-between mb-1">
                             <div class="flex items-center gap-2 overflow-hidden">
-                                ${city.isHome ? '<svg xmlns="http://www.w3.org/2000/svg" class="text-amber-500 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' : ''}
-                                <span class="font-bold text-slate-100 truncate text-lg tracking-tight">${city.name}</span>
+                                ${city.isHome ? '<svg xmlns="http://www.w3.org/2000/svg" class="text-amber-500 shrink-0" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' : ''}
+                                <span class="font-bold text-slate-100 truncate text-base tracking-tight">${city.name}</span>
                             </div>
-                            ${city.dstInfo && city.dstInfo.imminent ? '<div class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 animate-pulse text-[8px] font-black">DST</div>' : ''}
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="setHome(${index})" class="text-slate-500 hover:text-amber-400 p-1" title="Set as Home"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+                                <button onclick="removeCity(${index})" class="text-slate-500 hover:text-red-400 p-1" title="Remove"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-3 mb-2.5">
-                            <span class="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">UTC${offset >= 0 ? '+' : ''}${offset}</span>
-                            <span class="text-[10px] font-black text-blue-400 uppercase tracking-wider">${localTimeStr}</span>
-                            <span id="dateLabel-${index}" class="text-[9px] font-bold text-slate-600 uppercase">${formatDate(new Date(baseDate.toLocaleString('en-US', { timeZone: city.timezone })))}</span>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[13px] font-black text-blue-400">${localTimeStr.toLowerCase()}</span>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${city.dstInfo && city.dstInfo.currentOffset >= 0 ? '+' : ''}${city.dstInfo.currentOffset}</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-600 uppercase">${formatDate(new Date(displayDate.toLocaleString('en-US', { timeZone: city.timezone })))}</span>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <select onchange="updateBusinessHours(${index}, 'start', this.value)" class="bg-slate-800/40 text-[9px] text-emerald-400 font-black border border-emerald-500/10 rounded px-1.5 py-1 outline-none cursor-pointer">
-                                    ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.start === i ? 'selected' : ''} class="bg-slate-900">${i % 12 || 12}${i < 12 ? 'am' : 'pm'}</option>`).join('')}
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1">
+                                <select onchange="updateBusinessHours(${index}, 'start', this.value)" class="bg-transparent text-[9px] text-slate-500 font-bold border-none p-0 outline-none cursor-pointer hover:text-emerald-400">
+                                    ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.start === i ? 'selected' : ''} class="bg-slate-900">${formatHourLabel(i)}</option>`).join('')}
                                 </select>
-                                <span class="text-slate-700 font-bold">-</span>
-                                <select onchange="updateBusinessHours(${index}, 'end', this.value)" class="bg-slate-800/40 text-[9px] text-emerald-400 font-black border border-emerald-500/10 rounded px-1.5 py-1 outline-none cursor-pointer">
-                                    ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.end === i ? 'selected' : ''} class="bg-slate-900">${i % 12 || 12}${i < 12 ? 'am' : 'pm'}</option>`).join('')}
+                                <span class="text-slate-700 text-[8px]">-</span>
+                                <select onchange="updateBusinessHours(${index}, 'end', this.value)" class="bg-transparent text-[9px] text-slate-500 font-bold border-none p-0 outline-none cursor-pointer hover:text-emerald-400">
+                                    ${Array.from({length: 24}).map((_, i) => `<option value="${i}" ${city.end === i ? 'selected' : ''} class="bg-slate-900">${formatHourLabel(i)}</option>`).join('')}
                                 </select>
                             </div>
-                            <div class="flex gap-1 action-btns">
-                                <button onclick="setHome(${index})" class="text-slate-600 hover:text-amber-400 p-1 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
-                                <button onclick="removeCity(${index})" class="text-slate-600 hover:text-red-400 p-1 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-                            </div>
+                            ${city.dstInfo && city.dstInfo.imminent ? '<div class="px-1 py-0.5 rounded-sm bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[7px] font-black">DST SHIFT</div>' : ''}
                         </div>
                     </div>
-                    <div class="flex-1 h-20 relative group/grid pr-4">
+                    <div class="flex-1 h-20 relative group/grid pr-4 flex">
                         <div id="scrubberLabel-${index}" class="scrubber-label hidden top-[-24px]"></div>
-                        <div class="h-full glass relative overflow-hidden bg-slate-950/20 border-white/5 shadow-inner">
-                            <div class="absolute inset-x-0 bottom-1.5 flex justify-between px-3 text-[8px] font-bold text-slate-700 uppercase tracking-tighter z-0 pointer-events-none">
-                                ${Array.from({length: 13}).map((_, i) => { const localH = (i * 2 + offset + 24) % 24; return `<span>${Math.floor(localH % 12 || 12)}${localH < 12 ? 'a' : 'p'}</span>`; }).join('')}
-                            </div>
-                            <!-- Forbidden Overlays -->
-                            <div class="forbidden-overlay" style="left: ${(fStart/24)*100}%; width: ${((24-fStart)/24)*100}%"></div>
-                            <div class="forbidden-overlay" style="left: 0; width: ${(fEnd/24)*100}%"></div>
-                            
-                            ${Array.from({length: 25}).map((_, i) => `<div class="hour-marker" style="left: ${(i/24)*100}%"></div>`).join('')}
-                            ${bStart < bEnd ? `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((bEnd-bStart)/24)*100}%"></div>` : `<div class="absolute top-0 bottom-0 business-hours" style="left: ${(bStart/24)*100}%; width: ${((24-bStart)/24)*100}%"></div><div class="absolute top-0 bottom-0 business-hours" style="left: 0; width: ${(bEnd/24)*100}%"></div>`}
+                        <div class="flex-1 h-full glass flex overflow-hidden bg-slate-950/20 border-white/5 shadow-inner">
+                            ${hourBlocksHtml}
                             <div class="current-time-marker" style="left: ${(new Date().getUTCHours() * 60 + new Date().getUTCMinutes()) / 1440 * 100}%"></div>
                         </div>
                     </div>`;
                 citiesList.appendChild(row);
             });
             if (hasCommon) {
+                const rect = citiesList.getBoundingClientRect();
+                const offsetX = 18 * 16;
+                const gridWidth = rect.width - offsetX - 16;
                 let start = (commonStartUTC % 24 + 24) % 24, end = (commonEndUTC % 24 + 24) % 24;
-                if (start < end) { commonTimeOverlay.classList.remove('hidden'); commonTimeOverlay.style.left = `calc(${(start/24)*100}% + 18rem)`; commonTimeOverlay.style.width = `${((end-start)/24)*100}%`; }
+                if (start < end) { 
+                    commonTimeOverlay.classList.remove('hidden'); 
+                    commonTimeOverlay.style.left = `${(start / 24) * gridWidth + offsetX}px`; 
+                    commonTimeOverlay.style.width = `${((end - start) / 24) * gridWidth}px`; 
+                }
             } else commonTimeOverlay.classList.add('hidden');
         }
 
@@ -484,10 +713,19 @@
 
         citiesList.addEventListener('mousemove', (e) => {
             const rect = citiesList.getBoundingClientRect();
-            const offsetX = 18 * 16, x = e.clientX - rect.left - offsetX, gridWidth = rect.width - offsetX;
-            if (x >= 0 && x <= gridWidth) {
-                const snappedPercent = Math.round(((x / gridWidth) * 1440) / 15) * 15 / 1440 * 100;
-                scrubber.style.left = `calc(${snappedPercent}% + 18rem)`;
+            const offsetX = 18 * 16; // 18rem
+            const paddingRight = 16; // pr-4
+            const gridWidth = rect.width - offsetX - paddingRight;
+            const x = e.clientX - rect.left - offsetX;
+            
+            if (x >= 0 && x <= gridWidth + paddingRight) {
+                const clampedX = Math.max(0, Math.min(x, gridWidth));
+                const snappedPercent = Math.round(((clampedX / gridWidth) * 1440) / 15) * 15 / 1440 * 100;
+                const scrubberWidth = (meetingDuration / 24) * gridWidth;
+                
+                scrubber.style.setProperty('--scrubber-width', `${scrubberWidth}px`);
+                scrubber.style.left = `${(snappedPercent / 100) * gridWidth + offsetX}px`;
+                
                 updateScrubberLabels(snappedPercent);
                 scrubber.classList.remove('hidden');
                 document.querySelectorAll('.scrubber-label').forEach(l => l.classList.remove('hidden'));
