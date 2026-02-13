@@ -3,13 +3,13 @@
 This plan outlines the steps to simplify the UI and enhance the visibility of the Home Base city.
 
 ## Phase 1: UI De-cluttering
-- [ ] Task: Write Tests for UI Element Removal
-    - [ ] Create a test to verify that the "Verify DST Shift" button and "Social Guardrail" notice are absent from the DOM.
-    - [ ] Create a test to verify that the "Ideal Window" notice still renders when a common window exists.
-- [ ] Task: Remove Redundant UI Elements
-    - [ ] Remove the `#futureToggle` button from `index.html`.
-    - [ ] Remove the `#homeNotice` element from `index.html`.
-    - [ ] Update the `render` function to remove any logic that attempts to update these removed elements.
+- [x] Task: Write Tests for UI Element Removal (bbcbdde)
+    - [x] Create a test to verify that the "Verify DST Shift" button and "Social Guardrail" notice are absent from the DOM.
+    - [x] Create a test to verify that the "Ideal Window" notice still renders when a common window exists.
+- [x] Task: Remove Redundant UI Elements (bbcbdde)
+    - [x] Remove the `#futureToggle` button from `index.html`.
+    - [x] Remove the `#homeNotice` element from `index.html`.
+    - [x] Update the `render` function to remove any logic that attempts to update these removed elements.
 - [ ] Task: Conductor - User Manual Verification 'UI De-cluttering' (Protocol in workflow.md)
 
 ## Phase 2: Home Base Visual Enhancement
