@@ -109,7 +109,20 @@
         .block-day { background: rgba(255, 255, 255, 0.02); }
         .block-business { background: rgba(16, 185, 129, 0.2); color: rgba(16, 185, 129, 0.5); }
         .block-home { border-top: 2px solid rgba(245, 158, 11, 0.3); }
-        .block-day-boundary { border-left: 2px dashed rgba(255, 255, 255, 0.18); }
+        /* Right-edge marker on the last business-hour block per city */
+        .block-eod {
+            border-right: 3px solid rgba(16, 185, 129, 0.7);
+            box-shadow: inset -4px 0 10px rgba(16, 185, 129, 0.15);
+        }
+        .block-day-boundary {
+            border-left: 2px solid rgba(255, 255, 255, 0.22);
+            position: relative;
+            box-shadow: inset 2px 0 8px rgba(0,0,0,0.18);
+        }
+        /* Day separator glow line in timeline header */
+        .hour-block.block-day-boundary {
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
 
         .timeline-header-right {
             display: flex;
@@ -143,20 +156,54 @@
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
         }
 
-        /* Clean Inline Date Marker */
+        /* DST transition vertical marker */
+        .dst-marker {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0.4));
+            z-index: 85;
+            pointer-events: none;
+            box-shadow: 0 0 14px rgba(251, 191, 36, 0.8), 0 0 4px rgba(251, 191, 36, 0.5);
+        }
+        /* Floating pill label above the DST marker */
+        .dst-marker-label {
+            position: absolute;
+            top: 4px;
+            transform: translateX(-50%);
+            background: rgba(251, 191, 36, 0.18);
+            border: 1px solid rgba(251, 191, 36, 0.6);
+            color: #fbbf24;
+            font-size: 7px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 3px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 86;
+            pointer-events: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 8px rgba(251,191,36,0.25);
+        }
+
+        /* Day boundary date label — pinned to top so it never overlaps the hour text */
         .date-marker-inline {
             position: absolute;
             left: 4px;
-            top: 4px;
-            font-size: 8px;
+            top: 3px;
+            transform: none;
+            font-size: 7px;
             font-weight: 900;
-            color: var(--accent-blue);
+            color: rgba(255, 255, 255, 0.65);
             text-transform: uppercase;
+            letter-spacing: 0.05em;
             line-height: 1;
-            background: rgba(15, 23, 42, 0.8);
-            padding: 1px 3px;
-            border-radius: 2px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 2px 4px;
+            border-radius: 3px;
             z-index: 10;
+            white-space: nowrap;
         }
 
         /* Hour label styles for timeline header */
@@ -455,7 +502,7 @@
             <div class="timeline-header">
                 <div class="w-[14rem] shrink-0 border-r border-white/10 bg-slate-950 flex flex-col justify-between py-1.5 px-4 sticky left-0 z-[70]">
                     <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Locations</span>
-                    <span class="text-[8px] text-slate-700">UTC →</span>
+                    <span class="text-[8px] text-amber-600/60 font-bold tracking-widest">Home Base →</span>
                 </div>
                 <div class="timeline-header-right">
                     <div id="dayLabelsRow" class="flex"></div>
@@ -470,6 +517,7 @@
                         <div class="scrubber-line"></div>
                     </div>
                     <div id="nowMarker" class="now-marker hidden"></div>
+                    <div id="dstMarkersContainer"></div>
                 </div>
             </div>
         </div>
@@ -480,6 +528,7 @@
             <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-slate-800 border border-white/5"></div><span class="text-[9px] font-bold uppercase tracking-widest">Personal Time</span></div>
             <div class="flex items-center gap-2"><div class="w-3 h-3 rounded border-l-4 border-amber-500 bg-amber-500/10"></div><span class="text-[9px] font-bold uppercase tracking-widest">Home Base</span></div>
             <div class="flex items-center gap-2"><div class="w-3 h-3 rounded border border-dashed border-blue-500/60 bg-blue-500/10"></div><span class="text-[9px] font-bold uppercase tracking-widest">Overlap Window</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded" style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.6);box-shadow:0 0 6px rgba(251,191,36,0.4);"></div><span class="text-[9px] font-bold uppercase tracking-widest">DST Change</span></div>
         </div>
     </div>
 
@@ -518,6 +567,7 @@
         const scrubberTooltip = document.getElementById('scrubberTooltip');
         const dayLabelsRow = document.getElementById('dayLabelsRow');
         const nowMarker = document.getElementById('nowMarker');
+        const dstMarkersContainer = document.getElementById('dstMarkersContainer');
 
         let is24Hour = JSON.parse(localStorage.getItem('globalSync_is24h')) || false;
         let meetingDuration = 1;
@@ -546,11 +596,12 @@
 
         function renderDateStrip() {
             dateStrip.innerHTML = '';
-            const today = new Date(); today.setHours(0,0,0,0);
+            // Anchor strip to baseDate (selected date), not always today
+            const anchor = new Date(baseDate); anchor.setHours(0,0,0,0);
             for (let i = 0; i < 7; i++) {
-                const d = new Date(today); d.setDate(today.getDate() + i);
+                const d = new Date(anchor); d.setDate(anchor.getDate() + i);
                 const btn = document.createElement('button');
-                const isActive = d.getTime() === baseDate.getTime();
+                const isActive = i === 0; // baseDate is always the first/highlighted button
                 btn.className = `date-btn ${isActive ? 'active' : ''}`;
                 btn.innerHTML = `<span class="text-[10px] font-black uppercase opacity-60">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span><span class="text-lg font-black">${d.getDate()}</span>`;
                 btn.onclick = () => { baseDate = new Date(d); render(); };
@@ -562,11 +613,18 @@
 
         function renderDayBands() {
             dayLabelsRow.innerHTML = '';
-            const day0 = new Date(baseDate.getTime());
-            day0.setUTCHours(0, 0, 0, 0);
+            const homeCity = selectedCities.find(c => c.isHome) || selectedCities[0];
+            const homeOffset = homeCity ? utils.getTimezoneOffset(homeCity.timezone, baseDate) : 0;
+
+            // The timeline starts at home city's midnight.
+            // For the header, render 3 day-bands of 24h each, labeled by home city date.
             for (let i = 0; i < 3; i++) {
-                const d = new Date(day0.getTime() + i * 24 * 3600000);
-                const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                // Hour 0 on the timeline = home city midnight on baseDate.
+                // Day i starts at timeline hour i*24.
+                // That corresponds to UTC hour: i*24 - homeOffset.
+                const utcMsForDayStart = baseDate.getTime() + (i * 24 - homeOffset) * 3600000;
+                const localDateStr = new Date(utcMsForDayStart + homeOffset * 3600000);
+                const label = localDateStr.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 const band = document.createElement('div');
                 band.className = `day-band${i % 2 === 1 ? ' day-band-even' : ''}`;
                 band.style.width = `${24 * BLOCK_WIDTH}px`;
@@ -580,7 +638,7 @@
             timelineLabels.className = 'hours-grid';
             timelineLabels.style.height = '2.25rem';
             timelineLabels.innerHTML = '';
-            let dayCount = 0;
+            // Hour labels are in home-city local time (hour 0 = home midnight).
             for (let i = 0; i < TOTAL_HOURS; i++) {
                 const label = document.createElement('div');
                 const h = i % 24;
@@ -588,10 +646,6 @@
                 label.className = `hour-block${isDayBoundary ? ' block-day-boundary' : ''}`;
 
                 let innerHtml = '';
-                if (h === 0) {
-                    dayCount++;
-                    innerHtml += `<span class="hour-label-day">Day ${dayCount}</span>`;
-                }
                 if (h % 3 === 0) {
                     innerHtml += `<span class="hour-label-major">${utils.formatHourLabel(h, is24Hour).replace(' ', '')}</span>`;
                 }
@@ -639,17 +693,22 @@
                     const time = utils.formatTime((slot.hUTC + utils.getTimezoneOffset(c.timezone, baseDate)) * 60, is24Hour);
                     return `<div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1.5">${dot}<span class="text-[10px] text-slate-300">${c.name}</span></div><span class="text-[11px] font-black text-blue-400 font-mono">${time}</span></div>`;
                 }).join('');
+                const homeCity2 = selectedCities.find(c => c.isHome) || selectedCities[0];
+                const homeOff2 = homeCity2 ? utils.getTimezoneOffset(homeCity2.timezone, baseDate) : 0;
+                const homeSlotTime = utils.formatTime(((slot.hUTC + homeOff2) % 24 * 60 + 24 * 60) % (24 * 60), is24Hour);
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Slot #${i+1}</span>
-                        <span class="text-[10px] font-mono text-slate-400">${utils.formatTime(slot.hUTC * 60, is24Hour)} UTC</span>
+                        <span class="text-[10px] font-mono text-amber-400">${homeSlotTime} ${homeCity2 ? homeCity2.name : ''}</span>
                     </div>
                     <div class="space-y-1.5 mb-3">${breakdown}</div>
                     <button onclick="event.stopPropagation(); window.openOutlook(${slot.hUTC})" class="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-blue-500/30 text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-500/10 transition-colors">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                         Calendar
                     </button>`;
-                card.onclick = () => moveScrubber((slot.hUTC / TOTAL_HOURS) * 100);
+                // Convert UTC slot hour to timeline hour (home-anchored)
+                const slotTimelineH = slot.hUTC + homeOff2;
+                card.onclick = () => moveScrubber((slotTimelineH / TOTAL_HOURS) * 100);
                 suggestionsPanel.appendChild(card);
             });
             suggestionsPanel.classList.toggle('hidden', picked.length === 0);
@@ -663,12 +722,16 @@
         }
 
         function showScrubberTooltip(percent, mouseX, mouseY) {
-            const utcHoursTotal = (percent / 100) * TOTAL_HOURS;
-            const utcTime = utils.formatTime(utcHoursTotal * 60, is24Hour);
+            // Timeline hour 0 = home city midnight. Convert to UTC hours.
+            const homeCity = selectedCities.find(c => c.isHome) || selectedCities[0];
+            const homeOff = homeCity ? utils.getTimezoneOffset(homeCity.timezone, baseDate) : 0;
+            const timelineHour = (percent / 100) * TOTAL_HOURS;
+            // UTC hour = timelineHour - homeOff
+            const utcHoursTotal = timelineHour - homeOff;
 
             let rowsHtml = selectedCities.map(city => {
                 const offset = utils.getTimezoneOffset(city.timezone, baseDate);
-                const localTime = utils.formatTime((utcHoursTotal + offset) * 60, is24Hour);
+                const localTime = utils.formatTime(((utcHoursTotal + offset) % 24 * 60 + 24 * 60) % (24 * 60), is24Hour);
                 const dotColor = city.isHome ? '#f59e0b' : '#475569';
                 return `<div class="scrubber-tooltip-row">
                     <span class="scrubber-tooltip-dot" style="background:${dotColor}"></span>
@@ -677,7 +740,12 @@
                 </div>`;
             }).join('');
 
-            scrubberTooltip.innerHTML = `<div class="scrubber-tooltip-header">${utcTime}<small>UTC</small></div>${rowsHtml}`;
+            // Header shows home city time (no UTC)
+            const homeTime = homeCity
+                ? utils.formatTime(((utcHoursTotal + homeOff) % 24 * 60 + 24 * 60) % (24 * 60), is24Hour)
+                : utils.formatTime(((utcHoursTotal) % 24 * 60 + 24 * 60) % (24 * 60), is24Hour);
+
+            scrubberTooltip.innerHTML = `<div class="scrubber-tooltip-header">${homeTime}<small>${homeCity ? homeCity.name : ''}</small></div>${rowsHtml}`;
             scrubberTooltip.style.display = 'block';
 
             // Position near cursor, clamped to viewport
@@ -744,23 +812,35 @@
                     : '';
 
                 let hourBlocksHtml = '';
+                // hTotal=0 is home city midnight on baseDate.
+                // Convert to UTC offset: utcHour = hTotal - homeOffset
+                // Then local hour for this city: localH = utcHour + offset = hTotal - homeOffset + offset
                 for (let hTotal = 0; hTotal < TOTAL_HOURS; hTotal++) {
-                    const localH = (hTotal + offset + 24) % 24;
+                    // utcHour relative to baseDate UTC midnight:
+                    const utcHour = hTotal - homeOffset;
+                    const localH = ((utcHour + offset) % 24 + 24) % 24;
+
                     const isBusiness = localH >= city.start && localH < city.end;
                     const isNight = localH >= 23 || localH < 7;
                     const typeClass = isBusiness ? 'block-business' : (isNight ? 'block-night' : 'block-day');
-                    const isDayBoundary = hTotal % 24 === 0 && hTotal > 0;
+
+                    // Day boundary for THIS city: local hour just crossed midnight
+                    const isDayBoundary = localH === 0 && hTotal > 0;
+
+                    // End-of-business marker: this block is business but the next is not
+                    const nextUtcHour = (hTotal + 1) - homeOffset;
+                    const nextLocalH = ((nextUtcHour + offset) % 24 + 24) % 24;
+                    const isEndOfBusiness = isBusiness && !(nextLocalH >= city.start && nextLocalH < city.end);
 
                     let markerHtml = '';
-                    const blockDate = new Date(baseDate.getTime());
-                    blockDate.setUTCHours(hTotal, 0, 0, 0);
-                    const localDateObj = new Date(blockDate.toLocaleString('en-US', { timeZone: city.timezone }));
-
-                    if (localDateObj.getHours() === 0) {
+                    if (isDayBoundary) {
+                        // Compute the local date at this boundary for the label
+                        const utcMs = baseDate.getTime() + utcHour * 3600000;
+                        const localDateObj = new Date(new Date(utcMs).toLocaleString('en-US', { timeZone: city.timezone }));
                         markerHtml = `<div class="date-marker-inline">${utils.formatDate(localDateObj)}</div>`;
                     }
 
-                    hourBlocksHtml += `<div class="hour-block ${typeClass} ${city.isHome ? 'block-home' : ''} ${isDayBoundary ? 'block-day-boundary' : ''}">${markerHtml}${utils.formatHourLabel(localH, is24Hour).replace(' ', '')}</div>`;
+                    hourBlocksHtml += `<div class="hour-block ${typeClass} ${city.isHome ? 'block-home' : ''} ${isDayBoundary ? 'block-day-boundary' : ''} ${isEndOfBusiness ? 'block-eod' : ''}">${markerHtml}${utils.formatHourLabel(localH, is24Hour).replace(' ', '')}</div>`;
                 }
 
                 row.innerHTML = `
@@ -801,23 +881,65 @@
 
             if (hasCommon) {
                 const gridWidth = TOTAL_HOURS * BLOCK_WIDTH;
-                let start = (commonStartUTC % 24 + 24) % 24, end = (commonEndUTC % 24 + 24) % 24;
-                if (start < end) {
+                // Convert UTC hours to home-city-anchored timeline hours (add homeOffset)
+                let startTimeline = ((commonStartUTC + homeOffset) % 24 + 24) % 24;
+                let endTimeline = ((commonEndUTC + homeOffset) % 24 + 24) % 24;
+                if (startTimeline < endTimeline) {
                     commonTimeOverlay.classList.remove('hidden');
-                    commonTimeOverlay.style.left = `${(start / TOTAL_HOURS) * gridWidth + OFFSET_X}px`;
-                    commonTimeOverlay.style.width = `${((end - start) / TOTAL_HOURS) * gridWidth}px`;
+                    commonTimeOverlay.style.left = `${(startTimeline / TOTAL_HOURS) * gridWidth + OFFSET_X}px`;
+                    commonTimeOverlay.style.width = `${((endTimeline - startTimeline) / TOTAL_HOURS) * gridWidth}px`;
+                } else {
+                    commonTimeOverlay.classList.add('hidden');
                 }
             } else commonTimeOverlay.classList.add('hidden');
 
-            const timelineStart = new Date(baseDate.getTime());
-            timelineStart.setUTCHours(0, 0, 0, 0);
-            const nowHours = (Date.now() - timelineStart.getTime()) / 3600000;
+            // Now marker: position relative to home city midnight on baseDate
+            // Timeline hour 0 = home city midnight = UTC hour (-homeOffset)
+            // UTC ms for home midnight: baseDate + (-homeOffset)*3600000
+            const homeMidnightUTC = baseDate.getTime() + (-homeOffset) * 3600000;
+            const nowHours = (Date.now() - homeMidnightUTC) / 3600000;
             if (nowHours >= 0 && nowHours <= TOTAL_HOURS) {
                 nowMarker.style.left = `${nowHours * BLOCK_WIDTH + OFFSET_X}px`;
                 nowMarker.classList.remove('hidden');
             } else {
                 nowMarker.classList.add('hidden');
             }
+
+            // DST markers: one per city that has a transition within the 3-day window
+            dstMarkersContainer.innerHTML = '';
+            selectedCities.forEach(city => {
+                const cityOffset = utils.getTimezoneOffset(city.timezone, baseDate);
+                // Check up to 3 days ahead (within the visible 72h window)
+                const dstInfo = utils.isDSTImminent(city.timezone, 3, baseDate);
+                if (!dstInfo.imminent) return;
+
+                // City midnight on the day of transition (home-time day daysUntil)
+                // = UTC ms when that city's local clock crosses midnight on that day.
+                // Approximate: start of that UTC day + city offset correction
+                const dstDay = new Date(baseDate.getTime() + dstInfo.daysUntil * 24 * 3600000);
+                dstDay.setUTCHours(0, 0, 0, 0);
+                // City midnight UTC = dstDay - cityOffset hours
+                const cityMidnightUTC_ms = dstDay.getTime() - cityOffset * 3600000;
+                // Timeline hour = ms delta from home midnight / 1h
+                const timelineH = (cityMidnightUTC_ms - homeMidnightUTC) / 3600000;
+
+                if (timelineH < 0 || timelineH > TOTAL_HOURS) return;
+
+                const leftPx = timelineH * BLOCK_WIDTH + OFFSET_X;
+                const direction = dstInfo.nextOffset > dstInfo.currentOffset ? '▲ +1h' : '▼ −1h';
+
+                const marker = document.createElement('div');
+                marker.className = 'dst-marker';
+                marker.style.left = `${leftPx}px`;
+
+                const label = document.createElement('div');
+                label.className = 'dst-marker-label';
+                label.style.left = `${leftPx}px`;
+                label.textContent = `DST ${city.name} ${direction}`;
+
+                dstMarkersContainer.appendChild(marker);
+                dstMarkersContainer.appendChild(label);
+            });
         }
 
         let searchTimeout;
@@ -853,8 +975,8 @@
             const gridWidth = TOTAL_HOURS * BLOCK_WIDTH;
             const x = e.clientX - rect.left - OFFSET_X;
             if (x >= 0 && x <= gridWidth) {
-                const utcH = x / BLOCK_WIDTH;
-                const snappedH = Math.round(utcH * 4) / 4;
+                const timelineH = x / BLOCK_WIDTH;
+                const snappedH = Math.round(timelineH * 4) / 4;
                 const clampedH = Math.max(0, Math.min(TOTAL_HOURS, snappedH));
                 const snappedPercent = (clampedH / TOTAL_HOURS) * 100;
                 scrubber.style.left = `${(clampedH / TOTAL_HOURS) * gridWidth + OFFSET_X}px`;
